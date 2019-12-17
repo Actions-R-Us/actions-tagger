@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "module": "es2015",
+        "outDir": "lib",
+        "alwaysStrict": true,
+        "moduleResolution": "node",
+        "noImplicitAny": true,
+        "esModuleInterop": true,
+        "noUnusedLocals": true
+    },
+    "files": [
+        "action.ts"
+    ],
+    "include": ["typings/*"],
+    "typeAcquisition": {
+      "enable": true
+    },
+    "compileOnSave": true
+}

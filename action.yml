@@ -1,0 +1,17 @@
+# See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions
+# Also: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/using-environment-variables#default-environment-variables
+
+name: 'Actions Tagger'
+author: 'smac89'
+description: 'Keep your action versions up-to-date by automatically promoting a major tag each time a minor release is created'
+inputs:
+  publish_latest:
+    description: 'Whether or not to also publish a `latest` tag'
+    required: false
+    default: false
+runs:
+  using: 'node12'
+  main: 'lib/index.js'
+branding:
+  icon: 'at-sign'
+  color: 'white'

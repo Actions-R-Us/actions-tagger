@@ -1,0 +1,28 @@
+{
+    "name": "actions-tagger",
+    "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Actions-R-Us/actions-tagger.git"
+    },
+    "main": "lib/index.js",
+    "scripts": {
+        "watch": "ncc build action.ts --watch --minify --out lib"
+    },
+    "author": {
+        "name": "Actions-R-Us",
+        "url": "https://github.com/Actions-R-Us"
+    },
+    "license": "MIT",
+    "dependencies": {
+        "@actions/core": "^1.2.0",
+        "@actions/github": "^2.0.0",
+        "semver": "^7.1.1"
+    },
+    "devDependencies": {
+        "typescript": "3.7.3",
+        "@types/semver": "^6.2.0",
+        "@types/node": "^12.12.18",
+        "@zeit/ncc": "^0.20.5"
+    }
+}
