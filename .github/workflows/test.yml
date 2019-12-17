@@ -1,0 +1,17 @@
+name: Test Action Tagger Action
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  run-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./
+        with:
+          publish_latest: true
+        env:
+          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
