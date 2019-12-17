@@ -3,12 +3,15 @@
 
 # Usage
 
-**Basic**
-
 ```yaml
+- uses: ./
+  with:
+    publish_latest: true
+  env:
+    GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
 ```
 
-## Similar projects:
+# Similar projects
 
 ### https://github.com/EndBug/latest-tag
 - Only publishes the `latest` tag
