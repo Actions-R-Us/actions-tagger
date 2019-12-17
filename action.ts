@@ -27,23 +27,25 @@ async function tagRelease(github: GitHub, tagName: string) {
         return refObj.ref.endsWith(tagName);
     });
 
-    let updateRef: unknown
+    let upstreamRef: unknown;
 
     if (matchingRef !== undefined) {
-        ({data: updateRef} = await github.git.updateRef({
+        core.info(`Updating ref: tags/${tagName} to: ${process.env.GITHUB_SHA}`);
+        ({data: upstreamRef} = await github.git.updateRef({
             ...context.repo,
             force: true,
-            ref: matchingRef.ref,
+            ref: `tags/${tagName}`,
             sha: process.env.GITHUB_SHA
         }));
     } else {
-        ({data: updateRef} = await github.git.createRef({
+        core.info(`Creating ref: refs/tags/${tagName} for: ${process.env.GITHUB_SHA}`);
+        ({data: upstreamRef} = await github.git.createRef({
             ...context.repo,
             ref: `refs/tags/${tagName}`,
             sha: process.env.GITHUB_SHA
         }));
     }
-    core.info(JSON.stringify(updateRef));
+    core.info(JSON.stringify(upstreamRef));
 }
 
 async function run(): Promise<void> {
