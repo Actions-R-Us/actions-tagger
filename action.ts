@@ -18,13 +18,31 @@ function isRelease(): boolean {
  * @param tagName The name of the tag to use
  */
 async function tagRelease(github: GitHub, tagName: string) {
-    const {data: updateRef} = await github.git.updateRef({
+    const {data: matchingRefs} = await github.git.listMatchingRefs({
         ...context.repo,
-        force: true,
-        ref: `refs/tags/${tagName}`,
-        sha: process.env.GITHUB_SHA
+        ref: `tags/${tagName}`
     });
 
+    const matchingRef = matchingRefs.find(refObj => {
+        return refObj.ref.endsWith(tagName);
+    });
+
+    let updateRef: unknown
+
+    if (matchingRef !== undefined) {
+        ({data: updateRef} = await github.git.updateRef({
+            ...context.repo,
+            force: true,
+            ref: matchingRef.ref,
+            sha: process.env.GITHUB_SHA
+        }));
+    } else {
+        ({data: updateRef} = await github.git.createRef({
+            ...context.repo,
+            ref: `refs/tags/${tagName}`,
+            sha: process.env.GITHUB_SHA
+        }));
+    }
     core.info(JSON.stringify(updateRef));
 }
 
