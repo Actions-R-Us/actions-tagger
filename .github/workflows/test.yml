@@ -14,4 +14,4 @@ jobs:
         with:
           publish_latest: true
         env:
-          GITHUB_TOKEN: '${{secrets.TAGGER_GITHUB_TOKEN}}'
+          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'

@@ -4,7 +4,7 @@
 # Usage
 
 ```yaml
-- uses: ./
+- uses: Actions-R-Us/actions-tagger@latest
   with:
     publish_latest: true
   env:
