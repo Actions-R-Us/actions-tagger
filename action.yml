@@ -13,5 +13,5 @@ runs:
   using: 'node12'
   main: 'lib/index.js'
 branding:
-  icon: 'at-sign'
+  icon: 'tag'
   color: 'white'
