@@ -1,5 +1,5 @@
 # Actions Tagger
-:speedboat: Keep your action versions up-to-date by automatically promoting a major tag (and optionally, a `latest` tag) each time a minor release is created.
+:speedboat: Keep your action versions up-to-date by automatically promoting a major tag (and optionally, a `latest` tag) each time a release is created.
 
 # Rationale
 According to the github actions [versioning guide](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md#versioning), actions publishers should have a major tag (`v1`, `v2`, etc) which points to the latest version of any minor/patch release for easy use by the consumers.
@@ -26,6 +26,8 @@ jobs:
         env:
           GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
 ```
+
+_Note this action is able to detect if it is being run in a **release** context, and if not it will display a message and exit gracefully._
 
 # Similar projects
 
