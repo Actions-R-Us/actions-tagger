@@ -22,7 +22,7 @@
     "devDependencies": {
         "typescript": "3.7.3",
         "@types/semver": "^6.2.0",
-        "@types/node": "^12.12.18",
+        "@types/node": "^13.1.4",
         "@zeit/ncc": "^0.20.5"
     }
 }
