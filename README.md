@@ -13,7 +13,7 @@ I found this process quite tedious, and repetetive and that is why this action e
 name: Keep the versions up-to-date
 
 on:
-  releases:
+  release:
     types: [published]
 
 jobs:
