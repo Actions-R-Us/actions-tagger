@@ -23,6 +23,6 @@
         "typescript": "3.7.4",
         "@types/semver": "^6.2.0",
         "@types/node": "^12.12.18",
-        "@zeit/ncc": "^0.21.0"
+        "@zeit/ncc": "^0.21.1"
     }
 }
