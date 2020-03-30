@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
-      - name: 'jest'
+      - name: jest
         run: |
           npm install
           npm run test
