@@ -7,12 +7,13 @@
         "moduleResolution": "node",
         "noImplicitAny": true,
         "esModuleInterop": true,
-        "noUnusedLocals": true
+        "noUnusedLocals": true,
+        "typeRoots": ["typings", "node_modules/@types"]
     },
     "files": [
-        "action.ts"
+        "src/action.ts",
     ],
-    "include": ["typings/*"],
+    "include": ["typings/*", "src/index.ts"],
     "typeAcquisition": {
       "enable": true
     },

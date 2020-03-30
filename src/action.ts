@@ -1,15 +1,35 @@
-import * as core from '@actions/core';
-import { context, GitHub } from '@actions/github';
-import valid from 'semver/functions/valid';
-import major from 'semver/functions/major';
+import * as core from "@actions/core";
+import { context, GitHub } from "@actions/github";
+import valid from "semver/functions/valid";
+import major from "semver/functions/major";
+import { TaggedRelease } from ".";
 
 /**
  * Checks if the event that triggered this action was a release
  * See: https://developer.github.com/v3/activity/events/types/#releaseevent
  */
 function isRelease(): boolean {
-    return context.payload.action === 'published'
-        && valid(context.payload.release?.tag_name) !== null;
+    return context.payload.action === "published" && valid(context.payload.release?.tag_name) !== null;
+}
+
+/**
+ * Creates the tags required and optionally a 'latest' tag
+ *
+ * @returns {Promise<TaggedRelease>}
+ */
+async function createTagRefs(): Promise<TaggedRelease> {
+    const octokit = new GitHub(process.env.GITHUB_TOKEN);
+    const majorVersion = major(context.payload.release?.tag_name);
+
+    const tag = `v${majorVersion}`;
+    await tagRelease(octokit, tag);
+
+    const publishLatest: boolean = core.getInput("publish_latest").toLowerCase() === "true";
+    if (publishLatest) {
+        await tagRelease(octokit, "latest");
+    }
+
+    return { tag, latest: publishLatest };
 }
 
 /**
@@ -18,7 +38,7 @@ function isRelease(): boolean {
  * @param tagName The name of the tag to use
  */
 async function tagRelease(github: GitHub, tagName: string) {
-    const {data: matchingRefs} = await github.git.listMatchingRefs({
+    const { data: matchingRefs } = await github.git.listMatchingRefs({
         ...context.repo,
         ref: `tags/${tagName}`
     });
@@ -31,7 +51,7 @@ async function tagRelease(github: GitHub, tagName: string) {
 
     if (matchingRef !== undefined) {
         core.info(`Updating ref: tags/${tagName} to: ${process.env.GITHUB_SHA}`);
-        ({data: upstreamRef} = await github.git.updateRef({
+        ({ data: upstreamRef } = await github.git.updateRef({
             ...context.repo,
             force: true,
             ref: `tags/${tagName}`,
@@ -39,7 +59,7 @@ async function tagRelease(github: GitHub, tagName: string) {
         }));
     } else {
         core.info(`Creating ref: refs/tags/${tagName} for: ${process.env.GITHUB_SHA}`);
-        ({data: upstreamRef} = await github.git.createRef({
+        ({ data: upstreamRef } = await github.git.createRef({
             ...context.repo,
             ref: `refs/tags/${tagName}`,
             sha: process.env.GITHUB_SHA
@@ -48,7 +68,7 @@ async function tagRelease(github: GitHub, tagName: string) {
     core.info(JSON.stringify(upstreamRef));
 }
 
-async function run(): Promise<void> {
+async function run() {
     try {
         if (!isRelease()) {
             core.info("This action should only be used in a release context");
@@ -57,14 +77,9 @@ async function run(): Promise<void> {
         }
 
         if (process.env.GITHUB_TOKEN) {
-            const octokit = new GitHub(process.env.GITHUB_TOKEN);
-            const majorVersion = major(context.payload.release?.tag_name);
-
-            await tagRelease(octokit, `v${majorVersion}`);
-
-            if (Boolean(core.getInput('publish_latest'))) {
-                await tagRelease(octokit, 'latest');
-            }
+            const { tag, latest } = await createTagRefs();
+            core.setOutput("tag", tag);
+            core.setOutput("latest", latest.toString());
         } else {
             core.setFailed("Expected a `GITHUB_TOKEN` environment variable");
         }

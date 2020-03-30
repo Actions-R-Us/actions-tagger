@@ -1,0 +1,7 @@
+{
+    "files.exclude": {
+        "node_modules": true
+    },
+    "prettier.printWidth": 120,
+    "prettier.tabWidth": 4
+}
