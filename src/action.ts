@@ -65,7 +65,10 @@ async function tagRelease(github: GitHub, tagName: string) {
             sha: process.env.GITHUB_SHA
         }));
     }
-    core.info(JSON.stringify(upstreamRef));
+
+    if (core.isDebug()) {
+        core.debug(JSON.stringify(upstreamRef));
+    }
 }
 
 async function run() {
