@@ -5,13 +5,15 @@ on:
   push:
     branches:
       - 'release/**'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   run-tests:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
-      - name: 'jest'
+      - name: jest
         run: |
           npm install
           npm run test

@@ -1,6 +1,6 @@
 {
     "name": "actions-tagger",
-    "version": "1.0.1-latest",
+    "version": "1.0.2-latest",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Actions-R-Us/actions-tagger.git"
@@ -14,8 +14,13 @@
         "bail": true,
         "verbose": true,
         "testEnvironment": "node",
-        "testMatch": ["**/__tests__/*.ts"],
-        "moduleFileExtensions": ["ts", "js"],
+        "testMatch": [
+            "**/__tests__/*.ts"
+        ],
+        "moduleFileExtensions": [
+            "ts",
+            "js"
+        ],
         "transform": {
             ".ts$": "ts-jest"
         }
@@ -26,9 +31,9 @@
     },
     "license": "MIT",
     "dependencies": {
-        "@actions/core": "^1.2.0",
-        "@actions/github": "^2.0.0",
-        "semver": "^7.1.1"
+        "@actions/core": "^1.2.3",
+        "@actions/github": "^2.1.1",
+        "semver": "^7.1.2"
     },
     "devDependencies": {
         "typescript": "3.8.3",
