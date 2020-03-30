@@ -9,6 +9,11 @@ inputs:
     description: 'Whether or not to also publish a `latest` tag'
     required: false
     default: false
+outputs:
+  tag:
+    description: 'The major version that was tagged. ex v1'
+  latest:
+    description: "Set to either 'true' or 'false' depending on whether the latest tag was created"
 runs:
   using: 'node12'
   main: 'lib/index.js'

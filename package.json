@@ -7,7 +7,18 @@
     },
     "main": "lib/index.js",
     "scripts": {
-        "watch": "ncc build action.ts --watch --minify --out lib"
+        "watch": "ncc build src/action.ts --watch --minify --out lib",
+        "test": "jest"
+    },
+    "jest": {
+        "bail": true,
+        "verbose": true,
+        "testEnvironment": "node",
+        "testMatch": ["**/__tests__/*.ts"],
+        "moduleFileExtensions": ["ts", "js"],
+        "transform": {
+            ".ts$": "ts-jest"
+        }
     },
     "author": {
         "name": "Actions-R-Us",
@@ -20,9 +31,13 @@
         "semver": "^7.1.1"
     },
     "devDependencies": {
-        "typescript": "3.7.3",
+        "typescript": "3.7.4",
         "@types/semver": "^6.2.0",
         "@types/node": "^12.12.18",
-        "@zeit/ncc": "^0.20.5"
+        "@zeit/ncc": "^0.21.0",
+        "prettier": "2.0.2",
+        "jest": "25.2.4",
+        "@types/jest": "22.2.3",
+        "ts-jest": "25.3.0"
     }
 }
