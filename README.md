@@ -48,7 +48,6 @@ jobs:
           publish_latest: true
         env:
           GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
-          TESTING: true
 ```
 
 _Note this action is able to detect if it is being run in a **release** context, and if not it will display a message and exit gracefully._
