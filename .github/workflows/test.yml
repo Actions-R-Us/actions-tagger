@@ -1,17 +1,17 @@
-name: Test Action Tagger Action
+name: Sanity Check
 
 on:
-  release:
-    types:
-      - published
+  pull_request:
+  push:
+    branches:
+      - 'release/**'
 
 jobs:
-  run-test:
+  run-tests:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: ./
-        with:
-          publish_latest: true
-        env:
-          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
+      - name: 'jest'
+        run: |
+          npm install
+          npm run test

@@ -6,6 +6,29 @@ According to the github actions [versioning guide](https://github.com/actions/to
 
 I found this process quite tedious, and repetetive and that is why this action exists. If you have published an action and would like to have your action follow the same versioning structure as many others in the [marketplace](https://github.com/marketplace?type=actions), then simply create a release workflow that includes this action. See the _usage_ example.
 
+---
+## Inputs
+
+### `publish_latest`
+
+Indicates to the action whether or not to create/update a tag called `latest` pointing to the latest release. Default `"false"`.
+
+## Outputs
+
+### `tag`
+
+The major tag that was published.
+
+### `latest`
+
+Was the latest tag also published?
+
+## Env
+
+### `GITHUB_TOKEN`
+
+**Required** A github token used for creating an octoclient for making API calls
+
 # Usage
 
 `versioning.yml`
