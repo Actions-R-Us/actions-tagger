@@ -34,7 +34,7 @@
         "typescript": "3.8.3",
         "@types/semver": "^7.1.0",
         "@types/node": "^12.12.18",
-        "@zeit/ncc": "^0.21.0",
+        "@zeit/ncc": "^0.22.0",
         "prettier": "2.0.2",
         "jest": "25.2.4",
         "@types/jest": "22.2.3",
