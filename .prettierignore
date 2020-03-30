@@ -1,2 +1,7 @@
-**
-!action.ts
+# https://github.com/prettier/prettier-vscode/issues/578
+
+# ignore everything
+/*
+
+# except for src folder
+!/src/

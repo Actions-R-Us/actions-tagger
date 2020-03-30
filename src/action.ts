@@ -13,7 +13,7 @@ function isRelease(): boolean {
 }
 
 /**
- * Creates the tags required and optionally 'latest' tag
+ * Creates the tags required and optionally a 'latest' tag
  *
  * @returns {Promise<TaggedRelease>}
  */
