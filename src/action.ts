@@ -7,9 +7,21 @@ import { TaggedRelease } from ".";
 /**
  * Checks if the event that triggered this action was a release
  * See: https://developer.github.com/v3/activity/events/types/#releaseevent
+ *
+ * @returns {boolean}
  */
 function isRelease(): boolean {
     return context.payload.action === "published" && valid(context.payload.release?.tag_name) !== null;
+}
+
+/**
+ * Check if the event that triggered this actions was as a result
+ * of a prerelease or not
+ *
+ * @returns {boolean}
+ */
+export function isPrelease(): boolean {
+    return context.payload.action === "published" && context.payload.release?.prerelease === true;
 }
 
 /**
@@ -76,6 +88,12 @@ async function run() {
         if (!isRelease()) {
             core.info("This action should only be used in a release context");
             core.info("If you believe this to be an error, please submit a bug report");
+            return;
+        }
+
+        if (isPrelease()) {
+            core.info("Pre-release detected. Nothing to be done.");
+            core.info("See https://github.com/Actions-R-Us/actions-tagger/issues/23");
             return;
         }
 
