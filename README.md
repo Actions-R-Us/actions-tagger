@@ -13,11 +13,15 @@ I found this process quite tedious, and repetetive and that is why this action e
 
 Indicates to the action whether or not to create/update a tag called `latest` pointing to the latest release. Default `"false"`.
 
+### `prefer_branch_releases`
+
+**Required** Do you prefer creating `vN` branches or `vN` tags?
+
 ## Outputs
 
-### `tag`
+### `refName`
 
-The major tag that was published.
+The name of the branch/tag that was published.
 
 ### `latest`
 
@@ -51,6 +55,7 @@ jobs:
       - uses: Actions-R-Us/actions-tagger@latest
         with:
           publish_latest: true
+          prefer_branch_releases: false
         env:
           GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
 ```

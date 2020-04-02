@@ -1,79 +1,60 @@
 import * as core from "@actions/core";
 import { context, GitHub } from "@actions/github";
-import valid from "semver/functions/valid";
-import major from "semver/functions/major";
-import { TaggedRelease } from ".";
-
-/**
- * Checks if the event that triggered this action was a release
- * See: https://developer.github.com/v3/activity/events/types/#releaseevent
- *
- * @returns {boolean}
- */
-function isRelease(): boolean {
-    return context.payload.action === "published" && valid(context.payload.release?.tag_name) !== null;
-}
-
-/**
- * Check if the event that triggered this actions was as a result
- * of a prerelease or not
- *
- * @returns {boolean}
- */
-export function isPrelease(): boolean {
-    return context.payload.action === "published" && context.payload.release?.prerelease === true;
-}
+import { TaggedRelease, isRelease, isPreRelease, majorVersion } from ".";
+import { queryCommitDateOfRef } from "./query";
 
 /**
  * Creates the tags required and optionally a 'latest' tag
  *
+ * @param {GitHub} github The octokit client for making requests
  * @returns {Promise<TaggedRelease>}
  */
-async function createTagRefs(): Promise<TaggedRelease> {
-    const octokit = new GitHub(process.env.GITHUB_TOKEN);
-    const majorVersion = major(context.payload.release?.tag_name);
+async function createRequiredRefs(github: GitHub): Promise<TaggedRelease> {
+    const mayor = majorVersion();
 
-    const tag = `v${majorVersion}`;
-    await tagRelease(octokit, tag);
+    const tag = `tags/v${mayor}`;
+    await createRef(github, tag);
 
     const publishLatest: boolean = core.getInput("publish_latest").toLowerCase() === "true";
     if (publishLatest) {
-        await tagRelease(octokit, "latest");
+        await createRef(github, "tags/latest");
     }
 
     return { tag, latest: publishLatest };
 }
 
 /**
- * Tags the release with the given tagName
+ * Creates the given ref for this release
+ * refName must begin with tags/ or heads/
+ *
  * @param github The github client
- * @param tagName The name of the tag to use
+ * @param refName The name of the ref to use. ex tags/latest, heads/v1, etc
  */
-async function tagRelease(github: GitHub, tagName: string) {
+async function createRef(github: GitHub, refName: string) {
     const { data: matchingRefs } = await github.git.listMatchingRefs({
         ...context.repo,
-        ref: `tags/${tagName}`
+        ref: refName
     });
 
     const matchingRef = matchingRefs.find(refObj => {
-        return refObj.ref.endsWith(tagName);
+        return refObj.ref.endsWith(refName);
     });
 
     let upstreamRef: unknown;
 
     if (matchingRef !== undefined) {
-        core.info(`Updating ref: tags/${tagName} to: ${process.env.GITHUB_SHA}`);
+        core.info(`Updating ref: ${refName} to: ${process.env.GITHUB_SHA}`);
         ({ data: upstreamRef } = await github.git.updateRef({
             ...context.repo,
             force: true,
-            ref: `tags/${tagName}`,
+            ref: refName,
             sha: process.env.GITHUB_SHA
         }));
     } else {
-        core.info(`Creating ref: refs/tags/${tagName} for: ${process.env.GITHUB_SHA}`);
+        core.info(`Creating ref: refs/${refName} for: ${process.env.GITHUB_SHA}`);
         ({ data: upstreamRef } = await github.git.createRef({
             ...context.repo,
-            ref: `refs/tags/${tagName}`,
+            ref: `refs/${refName}`,
             sha: process.env.GITHUB_SHA
         }));
     }
@@ -81,6 +62,31 @@ async function tagRelease(github: GitHub, tagName: string) {
     if (core.isDebug()) {
         core.debug(JSON.stringify(upstreamRef));
     }
+}
+
+/**
+ * Checks if the commit date of the current release is earlier than
+ * the commit date of the major tag for this release
+ *
+ * @param {GitHub} github The octokit client instance
+ * @returns {Promise<boolean>}
+ */
+async function isLatestMajorRelease(github: GitHub): Promise<boolean> {
+    return github
+        .graphql(queryCommitDateOfRef, {
+            repoName: context.repo.repo,
+            repoOwner: context.repo.owner,
+            majorRef: "refs/tags/",
+            majorVersion: `v${majorVersion()}`,
+            tagCommit: process.env.GITHUB_SHA
+        })
+        .then(({ repository }) => {
+            const date = new Date(repository.refs.nodes[0]?.target.committedDate);
+            if (!isNaN(date.getTime())) {
+                return date < new Date(repository.object.committedDate);
+            }
+            return true;
+        });
 }
 
 async function run() {
@@ -91,16 +97,23 @@ async function run() {
             return;
         }
 
-        if (isPrelease()) {
+        if (isPreRelease()) {
             core.info("Pre-release detected. Nothing to be done.");
+            core.info("When ready, edit your release to remove the pre-release flag");
             core.info("See https://github.com/Actions-R-Us/actions-tagger/issues/23");
             return;
         }
 
         if (process.env.GITHUB_TOKEN) {
-            const { tag, latest } = await createTagRefs();
-            core.setOutput("tag", tag);
-            core.setOutput("latest", latest.toString());
+            const octokit = new GitHub(process.env.GITHUB_TOKEN);
+            if (await isLatestMajorRelease(octokit)) {
+                const { tag, latest } = await createRequiredRefs(octokit);
+                core.setOutput("tag", tag);
+                core.setOutput("latest", latest.toString());
+            } else {
+                core.info("Nothing to do because release commit is earlier than major tag commit");
+                core.info("If you believe this to be an error, please submit a bug report");
+            }
         } else {
             core.setFailed("Expected a `GITHUB_TOKEN` environment variable");
         }

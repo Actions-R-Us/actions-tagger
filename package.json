@@ -1,6 +1,6 @@
 {
     "name": "actions-tagger",
-    "version": "1.0.3-latest",
+    "version": "2.0.0-alpha",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Actions-R-Us/actions-tagger.git"
@@ -36,13 +36,13 @@
         "semver": "^7.1.2"
     },
     "devDependencies": {
-        "typescript": "3.8.3",
         "@types/semver": "^7.1.0",
         "@types/node": "^12.12.18",
-        "@zeit/ncc": "^0.22.0",
-        "prettier": "2.0.2",
-        "jest": "25.2.4",
         "@types/jest": "22.2.3",
-        "ts-jest": "25.3.0"
+        "@zeit/ncc": "^0.22.0",
+        "jest": "25.2.4",
+        "prettier": "2.0.2",
+        "ts-jest": "25.3.0",
+        "typescript": "3.8.3"
     }
 }

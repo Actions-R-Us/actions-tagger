@@ -14,5 +14,6 @@ jobs:
       - uses: ./
         with:
           publish_latest: true
+          prefer_branch_releases: false
         env:
           GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'

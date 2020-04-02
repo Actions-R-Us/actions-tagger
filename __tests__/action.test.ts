@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import {context} from '@actions/github';
-import {isPrelease} from '../src/action';
+import {isPreRelease} from '../src';
 
 describe("publish_latest tests", () => {
     test("not published when false", () => {
@@ -19,13 +19,13 @@ describe("release tests", () => {
         context.payload = {action: 'published', release: {
             "prerelease": true
         }}
-        expect(isPrelease()).toBe(true);
+        expect(isPreRelease()).toBe(true);
     });
 
     test("Will return false if not Pre-release", () => {
         context.payload = {action: 'published', release: {
             "prerelease": false
         }}
-        expect(isPrelease()).toBe(false);
+        expect(isPreRelease()).toBe(false);
     });
 });

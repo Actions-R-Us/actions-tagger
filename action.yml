@@ -9,9 +9,12 @@ inputs:
     description: 'Whether or not to also publish a `latest` tag'
     required: false
     default: false
+  prefer_branch_releases:
+    description: 'Do you prefer creating major branches?'
+    required: true
 outputs:
-  tag:
-    description: 'The major version that was tagged. ex v1'
+  refName:
+    description: 'The major version that was created. ex v1'
   latest:
     description: "Set to either 'true' or 'false' depending on whether the latest tag was created"
 runs:
