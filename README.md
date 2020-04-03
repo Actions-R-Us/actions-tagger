@@ -53,16 +53,13 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: Actions-R-Us/actions-tagger@latest
-        with:
-          publish_latest: true
-          prefer_branch_releases: false
         env:
           GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
 ```
 
-_Note this action is able to detect if it is being run in a **release** context, and if not it will display a message and exit gracefully._
+_Note this action is able to detect if it is being run in a **release** context, and if not it will notify you and exit gracefully._
 
 # Similar projects
 
-### https://github.com/EndBug/latest-tag
-- Only publishes the `latest` tag
+### [EndBug/latest-tag](https://github.com/EndBug/latest-tag)
+- Only creates a `latest` tag
