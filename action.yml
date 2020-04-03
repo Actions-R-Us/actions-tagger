@@ -5,15 +5,16 @@ name: 'Actions Tagger'
 author: 'smac89'
 description: 'Keep your action versions up-to-date by automatically promoting a major tag each time a minor release is created'
 inputs:
-  publish_latest:
+  publish_latest_tag:
     description: 'Whether or not to also publish a `latest` tag'
     required: false
     default: false
   prefer_branch_releases:
-    description: 'Do you prefer creating major branches?'
-    required: true
+    description: 'Do you prefer creating major branches over major tags?'
+    required: false
+	default: false
 outputs:
-  refName:
+  ref_name:
     description: 'The major version that was created. ex v1'
   latest:
     description: "Set to either 'true' or 'false' depending on whether the latest tag was created"

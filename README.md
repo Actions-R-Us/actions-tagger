@@ -9,17 +9,17 @@ I found this process quite tedious, and repetetive and that is why this action e
 ---
 ## Inputs
 
-### `publish_latest`
+### `publish_latest_tag`
 
 Indicates to the action whether or not to create/update a tag called `latest` pointing to the latest release. Default `"false"`.
 
 ### `prefer_branch_releases`
 
-**Required** Do you prefer creating `vN` branches or `vN` tags?
+Do you prefer creating `vN` branches or `vN` tags? Default `"false"`
 
 ## Outputs
 
-### `refName`
+### `ref_name`
 
 The name of the branch/tag that was published.
 
