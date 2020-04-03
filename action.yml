@@ -12,7 +12,7 @@ inputs:
   prefer_branch_releases:
     description: 'Do you prefer creating major branches over major tags?'
     required: false
-	default: false
+    default: false
 outputs:
   ref_name:
     description: 'The major version that was created. ex v1'
