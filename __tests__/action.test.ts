@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import {context} from '@actions/github';
-import {isPreRelease} from '../src';
+import {isPreRelease} from '../src/functions';
 
 describe("publish_latest tests", () => {
     test("not published when false", () => {
