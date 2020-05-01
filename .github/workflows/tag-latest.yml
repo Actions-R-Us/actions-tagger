@@ -4,6 +4,7 @@ on:
   release:
     types:
       - published
+      - edited
 
 jobs:
   run-tag-latest:
@@ -12,6 +13,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ./
         with:
-          publish_latest: true
+          publish_latest_tag: true
+          prefer_branch_releases: false
         env:
           GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
