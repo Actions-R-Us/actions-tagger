@@ -33,7 +33,7 @@
     "dependencies": {
         "@actions/core": "^1.2.3",
         "@actions/github": "^2.1.1",
-        "semver": "^7.1.2"
+        "semver": "^7.3.2"
     },
     "devDependencies": {
         "typescript": "3.8.3",
