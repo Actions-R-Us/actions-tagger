@@ -1,21 +1,20 @@
 {
-    "compilerOptions": {
-        "target": "es5",
-        "module": "es2015",
-        "outDir": "lib",
-        "alwaysStrict": true,
-        "moduleResolution": "node",
-        "noImplicitAny": true,
-        "esModuleInterop": true,
-        "noUnusedLocals": true,
-        "typeRoots": ["typings", "node_modules/@types"]
-    },
-    "files": [
-        "src/action.ts",
-    ],
-    "include": ["typings/*", "src/functions.ts"],
-    "typeAcquisition": {
+   "compilerOptions": {
+      "target": "es5",
+      "module": "commonjs",
+      "outDir": "lib",
+      "alwaysStrict": true,
+      "moduleResolution": "node",
+      "noImplicitAny": true,
+      "esModuleInterop": true,
+      "noUnusedLocals": true,
+      "charset": "utf-8",
+      "baseUrl": ".",
+      "paths": {
+         "src/*": ["src/*"]
+      }
+   },
+   "typeAcquisition": {
       "enable": true
-    },
-    "compileOnSave": true
+   }
 }
