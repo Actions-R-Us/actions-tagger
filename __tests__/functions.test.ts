@@ -1,19 +1,15 @@
 beforeEach(() => jest.resetModules());
 
 describe("getPreferredRef()", () => {
-    test("Should be heads", () => {
-        jest.doMock("src", () => ({
-            preferences: { preferBranchRelease: true },
-        }));
+    it("Should be heads", () => {
+        process.env.INPUT_PREFER_BRANCH_RELEASES = "true";
         return import("src/functions").then(({ getPreferredRef }) =>
             expect(getPreferredRef()).toBe("heads")
         );
     });
 
-    test("Should be tags", () => {
-        jest.doMock("src", () => ({
-            preferences: { preferBranchRelease: false },
-        }));
+    it("Should be tags", () => {
+        process.env.INPUT_PREFER_BRANCH_RELEASES = "false";
         return import("src/functions").then(({ getPreferredRef }) =>
             expect(getPreferredRef()).toBe("tags")
         );
