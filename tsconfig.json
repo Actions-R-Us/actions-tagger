@@ -13,7 +13,7 @@
     "files": [
         "src/action.ts",
     ],
-    "include": ["typings/*", "src/index.ts"],
+    "include": ["typings/*", "src/functions.ts"],
     "typeAcquisition": {
       "enable": true
     },
