@@ -22,7 +22,7 @@
       "semver": "^7.3.2"
    },
    "devDependencies": {
-      "@types/jest": "22.2.3",
+      "@types/jest": "25.2.1",
       "@types/node": "^12.12.18",
       "@types/semver": "^7.1.0",
       "@zeit/ncc": "^0.22.1",
