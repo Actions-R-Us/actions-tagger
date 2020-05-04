@@ -26,7 +26,7 @@
       "@types/node": "^12.12.18",
       "@types/semver": "^7.1.0",
       "@zeit/ncc": "^0.22.1",
-      "jest": "~25.5.3",
+      "jest": "~25.5.4",
       "ts-jest": "~25.4.0",
       "typescript": "3.8.3"
    }
