@@ -63,7 +63,7 @@ jobs:
         env:
           GITHUB_TOKEN: "${{secrets.GITHUB_TOKEN}}"
         with:
-          - publish_latest_tag: true
+          publish_latest_tag: true
 ```
 
 _Note this action is able to detect if it is being run in a **release** context, and if not it will notify you and exit gracefully._
