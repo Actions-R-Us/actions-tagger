@@ -36,7 +36,7 @@ Was the latest tag also published?
 
 ### `GITHUB_TOKEN`
 
-**Required** A github token used for creating an octoclient for making API calls
+**Required** A github token used for creating an octoclient for making API calls. Use `github.token`
 
 ## Debug Logging
 
@@ -44,7 +44,7 @@ This action supports [debug logging](https://help.github.com/en/actions/configur
 api call for creating the tags/branches.
 This is useful for testing and should be included when reporting bugs.
 
-# Usage
+# Sample Usage
 
 `versioning.yml`
 
@@ -61,7 +61,7 @@ jobs:
     steps:
       - uses: Actions-R-Us/actions-tagger@latest
         env:
-          GITHUB_TOKEN: "${{secrets.GITHUB_TOKEN}}"
+          GITHUB_TOKEN: "${{ github.token }}"
         with:
           - publish_latest_tag: true
 ```
