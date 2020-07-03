@@ -1,5 +1,7 @@
 {
-    "files.exclude": {
-        "node_modules": true
-    }
+  "files.exclude": {
+    "node_modules": true
+  },
+  "typescript.tsdk": ".yarn/sdks/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
 }

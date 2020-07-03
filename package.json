@@ -7,8 +7,9 @@
    },
    "main": "lib/index.js",
    "scripts": {
-      "watch": "ncc build src/action.ts --watch --minify --out lib",
-      "test": "jest"
+      "watch": "pnpify run ncc build src/action.ts --watch --minify --out lib",
+      "test": "jest",
+      "vscode:pnp": "pnpify --sdk vscode"
    },
    "author": {
       "name": "Actions-R-Us",
@@ -16,17 +17,19 @@
    },
    "license": "MIT",
    "dependencies": {
-      "@actions/core": "^1.2.3",
-      "@actions/github": "^2.1.1",
+      "@actions/core": "^1.2.4",
+      "@actions/github": "^4.0.0",
+      "@octokit/core": "3.1.0",
       "semver": "^7.3.2"
    },
    "devDependencies": {
-      "@types/jest": "~25.2.1",
+      "@types/jest": "~26.0.3",
       "@types/node": "^12.12.18",
-      "@types/semver": "^7.1.0",
-      "@zeit/ncc": "^0.22.1",
-      "jest": "~25.5.3",
-      "ts-jest": "~25.4.0",
-      "typescript": "3.8.3"
+      "@types/semver": "^7.3.1",
+      "@yarnpkg/pnpify": "^2.0.0-rc.25",
+      "@zeit/ncc": "^0.22.3",
+      "jest": "~26.1.0",
+      "ts-jest": "~26.1.1",
+      "typescript": "~3.9.6"
    }
 }

@@ -1,4 +1,4 @@
-name: 'Tag latest release of action tagger :zap:'
+name: "Tag latest release of action tagger :zap:"
 
 on:
   release:
@@ -16,4 +16,4 @@ jobs:
           publish_latest_tag: true
           prefer_branch_releases: false
         env:
-          GITHUB_TOKEN: '${{secrets.GITHUB_TOKEN}}'
+          GITHUB_TOKEN: "${{ github.token }}"

@@ -1,6 +1,7 @@
 import SemVer from "semver/classes/semver";
 import * as core from "@actions/core";
-import { context, GitHub } from "@actions/github";
+import { context } from "@actions/github";
+import { Octokit as GitHub } from "@octokit/core";
 import coerce from "semver/functions/coerce";
 import valid from "semver/functions/valid";
 import major from "semver/functions/major";
@@ -122,8 +123,8 @@ export async function findLatestReleases(github: GitHub): Promise<LatestRelease>
             pagination: nextPage,
         });
 
-        for (const ref of repository.refs.refsList) {
-            const semverRef = semverParse(ref.ref.name);
+        for (const { ref } of repository.refs.refsList) {
+            const semverRef = semverParse(ref.name);
             if (semverRef !== null) {
                 if (semverRef.major === major && semverGt(semverRef, majorLatest)) {
                     majorLatest = semverRef;
@@ -131,10 +132,6 @@ export async function findLatestReleases(github: GitHub): Promise<LatestRelease>
 
                 if (semverGt(semverRef, repoLatest)) {
                     repoLatest = semverRef;
-                }
-
-                if (core.isDebug()) {
-                    core.debug(semverRef.version);
                 }
             }
         }
@@ -154,7 +151,10 @@ export async function findLatestReleases(github: GitHub): Promise<LatestRelease>
  *
  * @param {GitHub} github The octokit client for making requests
  */
-export async function createRequiredRefs(github: GitHub, overridePublishLatest?: boolean): Promise<TaggedRelease> {
+export async function createRequiredRefs(
+    github: GitHub,
+    overridePublishLatest?: boolean
+): Promise<TaggedRelease> {
     const mayor = majorVersion();
 
     const ref = `${getPreferredRef()}/v${mayor}`;
@@ -181,7 +181,7 @@ async function createRef(github: GitHub, refName: string) {
         ref: refName,
     });
 
-    const matchingRef = matchingRefs.find((refObj) => {
+    const matchingRef = matchingRefs.find((refObj: { ref: string }) => {
         return refObj.ref.endsWith(refName);
     });
 
