@@ -1,5 +1,5 @@
 import * as core from "@actions/core";
-import { GitHub } from "@actions/github";
+import github from "@actions/github";
 import semverGte from "semver/functions/gte";
 import {
     isSemVersionedRelease,
@@ -21,6 +21,14 @@ function ifErrorSubmitBug() {
     }
 }
 
+function outputRefName(refName: string) {
+    core.setOutput("ref_name", refName);
+}
+
+function outputLatest(isLatest: boolean) {
+    core.setOutput("latest", isLatest.toString());
+}
+
 async function run() {
     try {
         if (!isPublishedRelease() && !isEditedRelease()) {
@@ -36,19 +44,25 @@ async function run() {
         }
 
         if (process.env.GITHUB_TOKEN) {
-            const octokit = new GitHub(process.env.GITHUB_TOKEN);
+            const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
             const { repoLatest, majorLatest } = await findLatestReleases(octokit);
 
             const releaseVer = releaseTag();
 
             if (semverGte(releaseVer, majorLatest)) {
-                const overridePubLatest = preferences.publishLatestTag && semverGte(releaseVer, repoLatest);
+                const overridePubLatest =
+                    preferences.publishLatestTag && semverGte(releaseVer, repoLatest);
 
-                const { ref, latest } = await createRequiredRefs(octokit, overridePubLatest);
-                core.setOutput("ref", ref);
-                core.setOutput("latest", latest.toString());
+                const { ref, latest } = await createRequiredRefs(
+                    octokit,
+                    overridePubLatest
+                );
+                outputRefName(ref);
+                outputLatest(latest);
             } else {
-                core.info("Nothing to do because release commit is earlier than major tag commit");
+                core.info(
+                    "Nothing to do because release commit is earlier than major tag commit"
+                );
                 ifErrorSubmitBug();
             }
         } else {

@@ -1,3 +1,4 @@
+# https://devhints.io/editorconfig
 root = true
 
 [*]
@@ -11,3 +12,4 @@ indent_size = 3
 
 [*.{ts,js}]
 indent_size = 4
+max_line_length = 90
