@@ -7,7 +7,7 @@
    },
    "main": "lib/index.js",
    "scripts": {
-      "watch": "pnpify ncc build src/action.ts --watch --minify --out lib",
+      "watch": "pnpify run ncc build src/action.ts --watch --minify --out lib",
       "test": "jest",
       "vscode:pnp": "pnpify --sdk vscode"
    },
