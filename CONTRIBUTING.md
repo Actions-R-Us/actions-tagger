@@ -7,7 +7,7 @@
 <h2 style="color: green;">DO</h2>
 
 - ### Checkout a release branch corresponding to the version you want to contribute to
-- ### Make your changes and create a pull request
-- ### Your request will be merged once it is reviewed
+- ### Make your changes and create a pull request for that branch
+- ### Your request will be merged to master once it is reviewed
 
 ## Thank you for reading
