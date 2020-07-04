@@ -24,9 +24,11 @@ Do you prefer creating `vN` branches or `vN` tags? Default `"false"`
 
 ## Outputs
 
-### `ref_name`
+### <strike>`ref_name`</strike> _Deprecated: Use [`tag`](#tag)_
 
-The name of the branch/tag that was published.
+### `tag`
+
+The version of the branch/tag that was published/updated.
 
 ### `latest`
 

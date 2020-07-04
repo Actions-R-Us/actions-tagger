@@ -8,6 +8,8 @@ import {
     findLatestReleases,
     createRequiredRefs,
     isEditedRelease,
+    outputTagName,
+    outputLatest,
 } from "./functions";
 import { preferences } from ".";
 
@@ -19,14 +21,6 @@ function ifErrorSubmitBug() {
         core.debug(`event: ${process.env.GITHUB_EVENT_NAME}`);
         core.debug(`tag_name: ${releaseTag().version}`);
     }
-}
-
-function outputRefName(refName: string) {
-    core.setOutput("ref_name", refName);
-}
-
-function outputLatest(isLatest: boolean) {
-    core.setOutput("latest", isLatest.toString());
 }
 
 async function run() {
@@ -57,7 +51,7 @@ async function run() {
                     octokit,
                     overridePubLatest
                 );
-                outputRefName(ref);
+                outputTagName(ref);
                 outputLatest(latest);
             } else {
                 core.info(

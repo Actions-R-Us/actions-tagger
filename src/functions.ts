@@ -150,6 +150,7 @@ export async function findLatestReleases(github: GitHub): Promise<LatestRelease>
  * Creates the tags required and optionally a 'latest' tag
  *
  * @param {GitHub} github The octokit client for making requests
+ * @param {Boolean} overridePublishLatest Flag used to force the publishing of the latest tag
  */
 export async function createRequiredRefs(
     github: GitHub,
@@ -207,4 +208,22 @@ async function createRef(github: GitHub, refName: string) {
     if (core.isDebug()) {
         core.debug(JSON.stringify(upstreamRef));
     }
+}
+
+/**
+ * Sets the output of this action to indicate the version that was published/updated
+ * @param refName The tag version
+ */
+export function outputTagName(refName: string) {
+    core.setOutput("tag", refName);
+    // DEPRECATED: Will be removed in v3
+    core.setOutput("ref_name", refName);
+}
+
+/**
+ * Sets the output of this action to indicate if the latest tag was published
+ * @param isLatest
+ */
+export function outputLatest(isLatest: boolean) {
+    core.setOutput("latest", isLatest.toString());
 }
