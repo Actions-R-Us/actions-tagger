@@ -40,8 +40,8 @@ function isPreRelease(): boolean {
 }
 
 /**
- * Get the actual release tag, taking into account
- * if this is a prerelease
+ * Get the actual tag version for this release. It also takes into account
+ * whether or not this is a prerelease
  *
  * @returns the tag for this release (if any)
  */
@@ -216,7 +216,7 @@ async function createRef(github: GitHub, refName: string) {
  */
 export function outputTagName(refName: string) {
     core.setOutput("tag", refName);
-    // DEPRECATED: Will be removed in v3
+    // TODO: DEPRECATED: Will be removed in v3
     core.setOutput("ref_name", refName);
 }
 
