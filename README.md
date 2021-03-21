@@ -36,6 +36,12 @@ The name of the branch/tag that was published.
 
 Was the latest tag also published?
 
+## Env
+
+### `GITHUB_TOKEN`
+
+**Deprecated** If a non-defoult PAT token is needed, use `input.token` instead.
+
 ## Debug Logging
 
 This action supports [debug logging](https://help.github.com/en/actions/configuring-and-managing-workflows/managing-a-workflow-run#enabling-debug-logging). When enabled, it will dump the output of the

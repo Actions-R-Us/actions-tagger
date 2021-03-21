@@ -43,14 +43,15 @@ async function run() {
             return;
         }
 
+        let token = core.getInput('token');
         if (process.env.GITHUB_TOKEN) {
+            token = process.env.GITHUB_TOKEN;
             core.info(
                 "Using obsolete GITHUB_TOKEN environment variable, please set an input
                 value instead. In most cases the default value will just work and you can
                 simply remove the token variable from your configuration.”
             );
         }
-        const token = core.getInput('token')
         const octokit = github.getOctokit(token);
         const { repoLatest, majorLatest } = await findLatestReleases(octokit);
 
