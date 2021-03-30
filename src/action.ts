@@ -8,6 +8,8 @@ import {
     findLatestReleases,
     createRequiredRefs,
     isEditedRelease,
+    outputTagName,
+    outputLatest,
 } from "./functions";
 import { preferences } from ".";
 
@@ -19,14 +21,6 @@ function ifErrorSubmitBug() {
         core.debug(`event: ${process.env.GITHUB_EVENT_NAME}`);
         core.debug(`tag_name: ${releaseTag().version}`);
     }
-}
-
-function outputRefName(refName: string) {
-    core.setOutput("ref_name", refName);
-}
-
-function outputLatest(isLatest: boolean) {
-    core.setOutput("latest", isLatest.toString());
 }
 
 async function run() {
@@ -42,16 +36,16 @@ async function run() {
             ifErrorSubmitBug();
             return;
         }
-
-        let token = core.getInput('token');
         if (process.env.GITHUB_TOKEN) {
-            token = process.env.GITHUB_TOKEN;
+            // TODO: Deprecrate: v3
             core.info(
-                "Using obsolete GITHUB_TOKEN environment variable, please set an input
-                value instead. In most cases the default value will just work and you can
-                simply remove the token variable from your configuration.”
+                `Using obsolete GITHUB_TOKEN environment variable, please set an input
+                |value instead. In most cases the default value will just work and you can
+                |simply remove the token variable from your configuration.`.replace(/^\s*\|/gm,'')
             );
         }
+      
+        const token = process.env.GITHUB_TOKEN ?? core.getInput('token');
         const octokit = github.getOctokit(token);
         const { repoLatest, majorLatest } = await findLatestReleases(octokit);
 
@@ -60,13 +54,13 @@ async function run() {
         if (semverGte(releaseVer, majorLatest)) {
             const overridePubLatest =
                 preferences.publishLatestTag && semverGte(releaseVer, repoLatest);
-
-            const { ref, latest } = await createRequiredRefs(
-                octokit,
-                overridePubLatest
-            );
-            outputRefName(ref);
-            outputLatest(latest);
+          
+                const { ref, latest } = await createRequiredRefs(
+                    octokit,
+                    overridePubLatest
+                );
+                outputTagName(ref);
+                outputLatest(latest);
         } else {
             core.info(
                 "Nothing to do because release commit is earlier than major tag commit"
