@@ -67,6 +67,7 @@ jobs:
     steps:
       - uses: Actions-R-Us/actions-tagger@latest
         with:
+          token: ${{ github.token }} # This is the default. No need to supply this field unless you have a custom token
           publish_latest_tag: true
 ```
 
