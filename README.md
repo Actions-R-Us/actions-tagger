@@ -42,7 +42,7 @@ Was the latest tag also published?
 
 ## Debug Logging
 
-This action supports [debug logging](https://help.github.com/en/actions/configuring-and-managing-workflows/managing-a-workflow-run#enabling-debug-logging). When enabled, it will dump the output of the
+This action supports [debug logging](https://docs.github.com/en/actions/managing-workflow-runs/enabling-debug-logging). When enabled, it will dump the output of the
 api call for creating the tags/branches.
 This is useful for testing and should be included when reporting bugs.
 
