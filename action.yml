@@ -13,6 +13,9 @@ inputs:
     description: "Do you prefer creating major branches as opposed to major tags?"
     required: false
     default: false
+  token:
+    description: 'A GitHub token used for creating an Octoclient for making API calls'
+    default: ${{ github.token }}
 outputs:
   tag:
     description: "The major version that was created/updated. ex v1"

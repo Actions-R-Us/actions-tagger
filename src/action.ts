@@ -36,31 +36,36 @@ async function run() {
             ifErrorSubmitBug();
             return;
         }
-
         if (process.env.GITHUB_TOKEN) {
-            const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
-            const { repoLatest, majorLatest } = await findLatestReleases(octokit);
+            // TODO: Deprecrate: v3
+            core.info(
+                `Using obsolete GITHUB_TOKEN environment variable, please set an input
+                |value instead. In most cases the default value will just work and you can
+                |simply remove the token variable from your configuration.`.replace(/^\s*\|/gm,'')
+            );
+        }
+      
+        const token = process.env.GITHUB_TOKEN ?? core.getInput('token');
+        const octokit = github.getOctokit(token);
+        const { repoLatest, majorLatest } = await findLatestReleases(octokit);
 
-            const releaseVer = releaseTag();
+        const releaseVer = releaseTag();
 
-            if (semverGte(releaseVer, majorLatest)) {
-                const overridePubLatest =
-                    preferences.publishLatestTag && semverGte(releaseVer, repoLatest);
-
+        if (semverGte(releaseVer, majorLatest)) {
+            const overridePubLatest =
+                preferences.publishLatestTag && semverGte(releaseVer, repoLatest);
+          
                 const { ref, latest } = await createRequiredRefs(
                     octokit,
                     overridePubLatest
                 );
                 outputTagName(ref);
                 outputLatest(latest);
-            } else {
-                core.info(
-                    "Nothing to do because release commit is earlier than major tag commit"
-                );
-                ifErrorSubmitBug();
-            }
         } else {
-            core.setFailed("Expected a `GITHUB_TOKEN` environment variable");
+            core.info(
+                "Nothing to do because release commit is earlier than major tag commit"
+            );
+            ifErrorSubmitBug();
         }
     } catch (error) {
         core.setFailed(error.message);
