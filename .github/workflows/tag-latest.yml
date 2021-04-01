@@ -15,5 +15,3 @@ jobs:
         with:
           publish_latest_tag: true
           prefer_branch_releases: false
-        env:
-          GITHUB_TOKEN: "${{ github.token }}"

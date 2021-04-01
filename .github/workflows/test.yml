@@ -15,5 +15,5 @@ jobs:
       - uses: actions/checkout@v2
       - name: jest
         run: |
-          yarn --immutable
-          yarn test
+          npm ci
+          npm run test

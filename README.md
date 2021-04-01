@@ -36,17 +36,18 @@ The version of the branch/tag that was published/updated.
 
 Was the latest tag also published?
 
-### <strike>`ref_name`</strike> _Deprecated: Use [`tag`](#tag)_
+### <strike>`ref_name`</strike>
+**Deprecate v3:** _Use [`tag`](#tag)_
 
-## Env
+## Env Inputs
 
 ### `GITHUB_TOKEN`
 
-**Deprecated** If a non-defoult PAT token is needed, use `input.token` instead.
+**Deprecate v3:** _If a non-default PAT [token] is needed, use [`token`](#token) instead._
 
 ## Debug Logging
 
-This action supports [debug logging](https://docs.github.com/en/actions/managing-workflow-runs/enabling-debug-logging). When enabled, it will dump the output of the
+This action supports [debug logging](https://docs.github.com/en/actions/managing-workflow-runs/enabling-debug-logging#enabling-step-debug-logging). When enabled, it will dump the output of the
 api call for creating the tags/branches.
 This is useful for testing and should be included when reporting bugs.
 
@@ -67,7 +68,6 @@ jobs:
     steps:
       - uses: Actions-R-Us/actions-tagger@latest
         with:
-          token: ${{ github.token }} # This is the default. No need to supply this field unless you have a custom token
           publish_latest_tag: true
 ```
 
