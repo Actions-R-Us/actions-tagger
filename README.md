@@ -4,9 +4,9 @@
 
 # Rationale
 
-According to the github actions [versioning guide](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md#versioning), actions publishers should have a major tag (`v1`, `v2`, etc) which points to the latest version of any minor/patch release for easy use by the consumers.
+According to the github actions [versioning guide](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md#versioning), actions publishers should have a major tag (`v1`, `v2`, etc) which points to the latest version of any minor/patch release of their action, for ease of use by the others.
 
-I found this process quite tedious, and repetetive and that is why this action exists. If you have published an action and would like to have your action follow the same versioning structure as many others in the [marketplace](https://github.com/marketplace?type=actions), then simply create a release workflow that includes this action. See the _usage_ example.
+I found this process quite tedious, and repetetive which is why this action exists. If you have published an action and would like to have your action follow the same versioning structure as many others in the [marketplace](https://github.com/marketplace?type=actions), then simply create a release workflow that includes this action. See the [_usage_ example](#sample-usage).
 
 ---
 
@@ -16,15 +16,15 @@ I found this process quite tedious, and repetetive and that is why this action e
 
 ### `publish_latest_tag`
 
-Indicates to the action whether or not to create/update a tag called `latest` pointing to the latest release. Default `"false"`.
+Indicates to the action whether or not to create/update a tag called `latest` pointing to the latest release. **Default: `"false"`**.
 
 ### `prefer_branch_releases`
 
-Do you prefer creating `vN` branches or `vN` tags? Default `"false"`
+Do you prefer creating `vN` branches or `vN` tags? **Default: `"false"`**
 
 ### `token`
 
-A github token used for creating an octoclient for making API calls. Default `${{ github.token }}`.
+A github token used for creating an octoclient for making API calls. **Default: `${{ github.token }}`**.
 
 ## Outputs
 
@@ -34,16 +34,16 @@ The version of the branch/tag that was published/updated.
 
 ### `latest`
 
-Was the latest tag also published?
+Was _latest_ also published?
 
 ### <strike>`ref_name`</strike>
-**Deprecate v3:** _Use [`tag`](#tag)_
+**Deprecated in v3:** _Use [`tag`](#tag)_
 
 ## Env Inputs
 
 ### `GITHUB_TOKEN`
 
-**Deprecate v3:** _If a non-default PAT [token] is needed, use [`token`](#token) instead._
+**Deprecated in v3:** _If a non-default PAT (Personal Access Token) is needed, use [`token`](#token) instead._
 
 ## Debug Logging
 
@@ -73,8 +73,7 @@ jobs:
 
 _Note this action is able to detect if it is being run in a **release** context, and if not it will notify you and exit gracefully._
 
-# Similar projects
+## Similar projects
 
 ### [EndBug/latest-tag](https://github.com/EndBug/latest-tag)
-
 - Only creates a `latest` tag

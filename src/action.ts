@@ -16,7 +16,7 @@ function ifErrorSubmitBug() {
 
 async function run(): Promise<void> {
     try {
-        if (!Functions.isPublishedRelease() && !Functions.isEditedRelease()) {
+        if (!(Functions.isPublishedRelease() || Functions.isEditedRelease())) {
             core.info("This action should only be used in a release context");
             ifErrorSubmitBug();
             return;

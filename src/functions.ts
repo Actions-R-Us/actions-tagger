@@ -21,14 +21,6 @@ namespace Functions {
     }
 
     /**
-     * Is a release available to the public?
-     * A pre-release is usually considered "not ready" for public use
-     */
-    function isPublicRelease(): boolean {
-        return isRelease() && !isPreRelease();
-    }
-
-    /**
      * Check if the event that triggered this actions was as a result
      * of a prerelease or not
      *
@@ -39,6 +31,14 @@ namespace Functions {
      */
     function isPreRelease(): boolean {
         return context.payload.release?.prerelease === true;
+    }
+
+    /**
+     * Is a release available to the public?
+     * A pre-release is usually considered "not ready" for public use
+     */
+     function isPublicRelease(): boolean {
+        return isRelease() && !isPreRelease();
     }
 
     /**
