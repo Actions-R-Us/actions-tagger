@@ -1,26 +1,31 @@
 # See: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions
 # Also: https://help.github.com/en/actions/automating-your-workflow-with-github-actions/using-environment-variables#default-environment-variables
 
-name: 'Actions Tagger'
-author: 'smac89'
-description: 'Keep your action versions up-to-date by automatically promoting a major tag each time a minor release is created'
+name: "Actions Tagger"
+author: "smac89"
+description: "Keep your action versions up-to-date by automatically promoting a major version each time a minor release is created"
 inputs:
+  # TODO v3: rename this to publish_latest and latest will not
+  # default to a tag, but will follow `prefer_branch_release`
   publish_latest_tag:
-    description: 'Whether or not to also publish a `latest` tag'
+    description: "Whether or not to also publish a `latest` tag"
     required: false
     default: false
   prefer_branch_releases:
-    description: 'Do you prefer creating major branches as opposed to major tags?'
+    description: "Do you prefer creating major branches as opposed to major tags?"
     required: false
     default: false
+  token:
+    description: "A GitHub token used for making requests to Github's API"
+    default: ${{ github.token }}
 outputs:
-  ref_name:
-    description: 'The major version that was created. ex v1'
+  tag:
+    description: "The major version that was created/updated. ex v1"
   latest:
-    description: "Either 'true' or 'false' depending on whether the latest tag was created"
+    description: "Either 'true' or 'false' depending on whether the 'latest' tag was created"
 runs:
-  using: 'node12'
-  main: 'lib/index.js'
+  using: "node12"
+  main: "lib/index.js"
 branding:
-  icon: 'tag'
-  color: 'white'
+  icon: "tag"
+  color: "white"

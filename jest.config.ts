@@ -1,11 +1,12 @@
+import { Config } from '@jest/types';
+
 // https://kulshekhar.github.io/ts-jest/user/config/
 // https://jestjs.io/docs/en/configuration
 
 // https://docs.github.com/en/actions/configuring-and-managing-workflows/using-environment-variables#default-environment-variables
-const bail = process.env.CI == "true" ? 0 : 1;
 
-module.exports = {
-    bail,
+const config: Config.InitialOptions = {
+    bail: process.env.CI == "true" ? 0 : 1,
     preset: "ts-jest",
     testEnvironment: "node",
     moduleNameMapper: {
@@ -16,3 +17,5 @@ module.exports = {
     verbose: false,
     globalSetup: "<rootDir>/tests/test-setup.ts",
 };
+
+export default config;

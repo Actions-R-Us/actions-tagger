@@ -11,9 +11,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref }}
       - uses: ./
         with:
           publish_latest_tag: true
           prefer_branch_releases: false
-        env:
-          GITHUB_TOKEN: "${{ github.token }}"

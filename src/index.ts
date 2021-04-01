@@ -19,6 +19,22 @@ export const preferences: ActionPreferences = {
     preferBranchRelease: process.env.INPUT_PREFER_BRANCH_RELEASES.toLowerCase() === "true",
 };
 
+export interface GraphQlQueryRepository {
+    refs: {
+        refsList: {
+            ref: {
+                name: string
+            }
+        }[],
+        pageInfo: {
+            endCursor: string,
+            hasNextPage: boolean
+        },
+        totalCount: number
+    }
+}
+
+// Test the query at: https://docs.github.com/en/graphql/overview/explorer
 export const queryAllRefs = `
 query ($repoOwner: String!, $repoName: String!, $majorRef: String!, $pagination: String = "") {
   repository(name: $repoName, owner: $repoOwner) {

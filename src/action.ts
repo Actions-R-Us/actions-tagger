@@ -1,15 +1,8 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import semverGte from "semver/functions/gte";
-import {
-    isSemVersionedRelease,
-    isPublishedRelease,
-    releaseTag,
-    findLatestReleases,
-    createRequiredRefs,
-    isEditedRelease,
-} from "./functions";
 import { preferences } from ".";
+import Functions from "./functions";
 
 function ifErrorSubmitBug() {
     core.info("If you believe this to be an error, please submit a bug report");
@@ -17,56 +10,55 @@ function ifErrorSubmitBug() {
 
     if (core.isDebug()) {
         core.debug(`event: ${process.env.GITHUB_EVENT_NAME}`);
-        core.debug(`tag_name: ${releaseTag().version}`);
+        core.debug(`tag_name: ${Functions.releaseTag().version}`);
     }
 }
 
-function outputRefName(refName: string) {
-    core.setOutput("ref_name", refName);
-}
-
-function outputLatest(isLatest: boolean) {
-    core.setOutput("latest", isLatest.toString());
-}
-
-async function run() {
+async function run(): Promise<void> {
     try {
-        if (!isPublishedRelease() && !isEditedRelease()) {
+        if (!Functions.isPublishedRelease() && !Functions.isEditedRelease()) {
             core.info("This action should only be used in a release context");
             ifErrorSubmitBug();
             return;
         }
 
-        if (!isSemVersionedRelease()) {
+        if (!Functions.isSemVersionedRelease()) {
             core.info("This action can only operate on semantically versioned releases");
+            core.info("See: https://semver.org/")
             ifErrorSubmitBug();
             return;
         }
 
         if (process.env.GITHUB_TOKEN) {
-            const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
-            const { repoLatest, majorLatest } = await findLatestReleases(octokit);
+            // TODO: Deprecate: v3
+            core.info(
+                `Using obsolete GITHUB_TOKEN environment variable: Please use token
+                |arg instead. In most cases the default value will just work and you can
+                |simply remove the token variable from your configuration.`.replace(/^\s*\|/gm,'')
+            );
+        }
 
-            const releaseVer = releaseTag();
+        const token = process.env.GITHUB_TOKEN ?? core.getInput('token');
+        const octokit = github.getOctokit(token);
+        const { repoLatest, majorLatest } = await Functions.findLatestReleases(octokit);
 
-            if (semverGte(releaseVer, majorLatest)) {
-                const overridePubLatest =
-                    preferences.publishLatestTag && semverGte(releaseVer, repoLatest);
+        const releaseVer = Functions.releaseTag();
 
-                const { ref, latest } = await createRequiredRefs(
+        if (semverGte(releaseVer, majorLatest)) {
+            const overridePubLatest =
+                preferences.publishLatestTag && semverGte(releaseVer, repoLatest);
+
+                const { ref, latest } = await Functions.createRequiredRefs(
                     octokit,
                     overridePubLatest
                 );
-                outputRefName(ref);
-                outputLatest(latest);
-            } else {
-                core.info(
-                    "Nothing to do because release commit is earlier than major tag commit"
-                );
-                ifErrorSubmitBug();
-            }
+                Functions.outputTagName(ref);
+                Functions.outputLatest(latest);
         } else {
-            core.setFailed("Expected a `GITHUB_TOKEN` environment variable");
+            core.info(
+                "Nothing to do because release commit is earlier than major tag commit"
+            );
+            ifErrorSubmitBug();
         }
     } catch (error) {
         core.setFailed(error.message);

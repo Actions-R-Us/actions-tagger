@@ -22,25 +22,32 @@ Indicates to the action whether or not to create/update a tag called `latest` po
 
 Do you prefer creating `vN` branches or `vN` tags? Default `"false"`
 
+### `token`
+
+A github token used for creating an octoclient for making API calls. Default `${{ github.token }}`.
+
 ## Outputs
 
-### `ref_name`
+### `tag`
 
-The name of the branch/tag that was published.
+The version of the branch/tag that was published/updated.
 
 ### `latest`
 
 Was the latest tag also published?
 
-## Env
+### <strike>`ref_name`</strike>
+**Deprecate v3:** _Use [`tag`](#tag)_
+
+## Env Inputs
 
 ### `GITHUB_TOKEN`
 
-**Required** A github token used for creating an octoclient for making API calls. Use `github.token`
+**Deprecate v3:** _If a non-default PAT [token] is needed, use [`token`](#token) instead._
 
 ## Debug Logging
 
-This action supports [debug logging](https://help.github.com/en/actions/configuring-and-managing-workflows/managing-a-workflow-run#enabling-debug-logging). When enabled, it will dump the output of the
+This action supports [debug logging](https://docs.github.com/en/actions/managing-workflow-runs/enabling-debug-logging#enabling-step-debug-logging). When enabled, it will dump the output of the
 api call for creating the tags/branches.
 This is useful for testing and should be included when reporting bugs.
 
@@ -60,8 +67,6 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: Actions-R-Us/actions-tagger@latest
-        env:
-          GITHUB_TOKEN: "${{ github.token }}"
         with:
           publish_latest_tag: true
 ```
