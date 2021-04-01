@@ -2,6 +2,11 @@ import SemVer from "semver/classes/semver";
 import semverParse from "semver/functions/parse";
 import Functions from "src/functions";
 
+/**
+ * mockReleaseTag is a jest.fn() function which allows us to supply
+ * a custom release tag, and have the function return that instead
+ * of going through context.payload
+ */
 const mockReleaseTag = new Proxy(Object.assign(jest.fn(), {
     __mockedTag: "2.0.1"
 }), {

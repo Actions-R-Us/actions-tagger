@@ -170,6 +170,7 @@ namespace Functions {
 
         const publishLatest: boolean = overridePublishLatest ?? preferences.publishLatestTag;
         if (publishLatest) {
+            // TODO v3: `${Functions.getPreferredRef()}/latest`
             await createRef(github, "tags/latest");
         }
 
@@ -237,18 +238,3 @@ namespace Functions {
 }
 
 export default Functions;
-
-// const functions = {
-//     releaseTag,
-//     isPublishedRelease,
-//     isEditedRelease,
-//     isSemVersionedRelease,
-//     majorVersion,
-//     getPreferredRef,
-//     findLatestReleases,
-//     createRequiredRefs,
-//     outputTagName,
-//     outputLatest
-// }
-
-// export default functions;

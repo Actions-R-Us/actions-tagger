@@ -3,8 +3,10 @@
 
 name: "Actions Tagger"
 author: "smac89"
-description: "Keep your action versions up-to-date by automatically promoting a major tag each time a minor release is created"
+description: "Keep your action versions up-to-date by automatically promoting a major version each time a minor release is created"
 inputs:
+  # TODO v3: rename this to publish_latest and latest will not
+  # default to a tag, but will follow `prefer_branch_release`
   publish_latest_tag:
     description: "Whether or not to also publish a `latest` tag"
     required: false
@@ -14,7 +16,7 @@ inputs:
     required: false
     default: false
   token:
-    description: 'A GitHub token used for creating an Octoclient for making API calls'
+    description: "A GitHub token used for making requests to Github's API"
     default: ${{ github.token }}
 outputs:
   tag:

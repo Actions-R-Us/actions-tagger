@@ -1,4 +1,4 @@
-# Contributing guidelines
+# Contributing to Actions-Tagger
 
 <h2 style="color: red;">DON'T</h2>
 
@@ -10,4 +10,8 @@
 - ### Make your changes and create a pull request for that branch
 - ### Your request will be merged to master once it is reviewed
 
-## Thank you for reading
+## License
+
+By contributing, you agree that your contributions will be licensed under its MIT License.
+
+### Thank you for reading
