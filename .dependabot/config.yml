@@ -15,4 +15,8 @@ update_configs:
           update_type: "all"
     commit_message:
       prefix: "chore"
+
+- name: Actions Tagger
+  uses: Actions-R-Us/actions-tagger@v2.0.2
+
       include_scope: true
