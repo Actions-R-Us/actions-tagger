@@ -24,7 +24,7 @@ outputs:
   latest:
     description: "Either 'true' or 'false' depending on whether the 'latest' tag was created"
 runs:
-  using: "node12"
+  using: "node16"
   main: "lib/index.js"
 branding:
   icon: "tag"
