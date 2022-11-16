@@ -1,6 +1,5 @@
 import * as core from "@actions/core";
-import { context } from "@actions/github";
-import { Octokit as GitHub } from "@octokit/core";
+import { context, getOctokit } from "@actions/github";
 import SemVer from "semver/classes/semver";
 import coerce from "semver/functions/coerce";
 import semverGt from "semver/functions/gt";
@@ -9,6 +8,7 @@ import semverParse from "semver/functions/parse";
 import valid from "semver/functions/valid";
 import { GraphQlQueryRepository, LatestRelease, preferences, queryAllRefs, TaggedRelease } from ".";
 
+type GitHub = ReturnType<typeof getOctokit>;
 
 namespace Functions {
 
@@ -50,7 +50,7 @@ namespace Functions {
     export function releaseTag(): SemVer {
         let tagName: string | SemVer = context.payload.release?.tag_name;
         if (isPreRelease()) {
-            tagName = coerce(tagName, { includePrerelease: true });
+            tagName = coerce(tagName);
         }
         return semverParse(tagName);
     }
@@ -185,7 +185,7 @@ namespace Functions {
      * @param refName The name of the ref to use. ex tags/latest, heads/v1, etc
      */
     async function createRef(github: GitHub, refName: string) {
-        const { data: matchingRefs } = await github.git.listMatchingRefs({
+        const { data: matchingRefs } = await github.rest.git.listMatchingRefs({
             ...context.repo,
             ref: refName,
         });
@@ -198,7 +198,7 @@ namespace Functions {
 
         if (matchingRef !== undefined) {
             core.info(`Updating ref: ${refName} to: ${process.env.GITHUB_SHA}`);
-            ({ data: upstreamRef } = await github.git.updateRef({
+            ({ data: upstreamRef } = await github.rest.git.updateRef({
                 ...context.repo,
                 force: true,
                 ref: refName,
@@ -206,7 +206,7 @@ namespace Functions {
             }));
         } else {
             core.info(`Creating ref: refs/${refName} for: ${process.env.GITHUB_SHA}`);
-            ({ data: upstreamRef } = await github.git.createRef({
+            ({ data: upstreamRef } = await github.rest.git.createRef({
                 ...context.repo,
                 ref: `refs/${refName}`,
                 sha: process.env.GITHUB_SHA,
