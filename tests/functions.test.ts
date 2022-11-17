@@ -47,9 +47,10 @@ describe("findLatestReleases()", () => {
 
         jest.mock('src/functions');
 
-        return await import('src/functions').then(({default: {findLatestReleases, releaseTag}}) => {
+        return await import('src/functions').then(async ({default: {findLatestReleases, releaseTag}}) => {
             // @ts-expect-error
             releaseTag.mockedTag = `v${currentTag}`;
+            // See __mocks__/functions.ts for why the above is done
             return findLatestReleases(octokit).then(({ repoLatest }) => {
                 expect(spyOctokit).toHaveBeenCalledTimes(1);
                 expect(repoLatest).toBe(currentTag);
