@@ -10,9 +10,9 @@ I found this process quite tedious, and repetetive which is why this action exis
 
 ---
 
-[![tested with jest](https://img.shields.io/badge/tested_with-jest-99424f.svg)](https://github.com/facebook/jest)
+[![Tested with Jest](https://img.shields.io/badge/tested_with-jest-99424f.svg)](https://github.com/facebook/jest)
 
-## Inputs
+# Inputs
 
 ### `publish_latest_tag`
 
@@ -39,13 +39,13 @@ Was _latest_ also published?
 ### <strike>`ref_name`</strike>
 **Deprecated in v3:** _Use [`tag`](#tag)_
 
-## Env Inputs
+# Env Inputs
 
 ### `GITHUB_TOKEN`
 
 **Deprecated in v3:** _If a non-default PAT (Personal Access Token) is needed, use [`token`](#token) instead._
 
-## Debug Logging
+# Debug Logging
 
 This action supports [debug logging](https://docs.github.com/en/actions/managing-workflow-runs/enabling-debug-logging#enabling-step-debug-logging). When enabled, it will dump the output of the
 api call for creating the tags/branches.
@@ -73,7 +73,7 @@ jobs:
 
 _Note this action is able to detect if it is being run in a **release** context, and if not it will notify you and exit gracefully._
 
-## Similar projects
+# Similar projects
 
 ### [EndBug/latest-tag](https://github.com/EndBug/latest-tag)
-- Only creates a `latest` tag
+- Creates a `latest` tag
