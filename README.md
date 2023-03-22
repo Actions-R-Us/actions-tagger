@@ -65,6 +65,8 @@ on:
 jobs:
   actions-tagger:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - uses: Actions-R-Us/actions-tagger@latest
         with:
