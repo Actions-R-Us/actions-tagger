@@ -65,13 +65,23 @@ on:
 jobs:
   actions-tagger:
     runs-on: windows-latest
+    permissions: # (1)
+      contents: write
     steps:
       - uses: Actions-R-Us/actions-tagger@latest
         with:
           publish_latest_tag: true
 ```
-
 _Note this action is able to detect if it is being run in a **release** context, and if not it will notify you and exit gracefully._
+
+---
+
+### Notes
+1. The [`permissions`](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions) option is only required if the workflow permission for the given repository is set to readonly. `readonly` permission renders the main purpose of this action useless because it will be unable to create tags. Using the `contents: write` scope allows this action to once again gain the ability to create/update tags. For more details on changing the workflow permissions for a given repository, see [Configuring the default `GITHUB_TOKEN` permissions](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#configuring-the-default-github_token-permissions). For more details on the various available scopes that can be configured for the `GITHUB_TOKEN`, see [`permissions`](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions).
+
+   It is also important to note that when modifying one scope of the [permission of `GITHUB_TOKEN`](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token), all other unspecified scopes are set to _no access_ with the exception of the `metadata` scope, which is set to `read`. See [Modifying the permissions for the `GITHUB_TOKEN`](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#modifying-the-permissions-for-the-github_token) for more details. This shouldn't be a concern for this action, because it only exclusively deals with the contents of the given repository.
+
+---
 
 # Similar projects
 
