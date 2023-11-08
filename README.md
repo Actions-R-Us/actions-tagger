@@ -6,7 +6,7 @@
 
 According to the github actions [versioning guide](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md#versioning), actions publishers should have a major tag (`v1`, `v2`, etc) which points to the latest version of any minor/patch release of their action, for ease of use by the others.
 
-I found this process quite tedious, and repetetive which is why this action exists. If you have published an action and would like to have your action follow the same versioning structure as many others in the [marketplace](https://github.com/marketplace?type=actions), then simply create a release workflow that includes this action. See the [_usage_ example](#sample-usage).
+I found this process quite tedious, and repetitive which is why this action exists. If you have published an action and would like to have your action follow the same versioning structure as many others in the [marketplace](https://github.com/marketplace?type=actions), then simply create a release workflow that includes this action. See the [_usage_ example](#sample-usage).
 
 ---
 
