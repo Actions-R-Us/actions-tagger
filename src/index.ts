@@ -15,23 +15,26 @@ export interface ActionPreferences {
 
 export const preferences: ActionPreferences = {
     publishLatestTag:
-        (process.env.INPUT_PUBLISH_LATEST ?? process.env.INPUT_PUBLISH_LATEST_TAG).toLowerCase() === "true",
-    preferBranchRelease: process.env.INPUT_PREFER_BRANCH_RELEASES.toLowerCase() === "true",
+        (
+            process.env.INPUT_PUBLISH_LATEST ?? process.env.INPUT_PUBLISH_LATEST_TAG
+        ).toLowerCase() === 'true',
+    preferBranchRelease:
+        process.env.INPUT_PREFER_BRANCH_RELEASES.toLowerCase() === 'true',
 };
 
 export interface GraphQlQueryRepository {
     refs: {
         refsList: {
             ref: {
-                name: string
-            }
-        }[],
+                name: string;
+            };
+        }[];
         pageInfo: {
-            endCursor: string,
-            hasNextPage: boolean
-        },
-        totalCount: number
-    }
+            endCursor: string;
+            hasNextPage: boolean;
+        };
+        totalCount: number;
+    };
 }
 
 // Test the query at: https://docs.github.com/en/graphql/overview/explorer

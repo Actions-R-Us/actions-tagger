@@ -7,7 +7,7 @@ end_of_line = lf
 indent_style = space
 insert_final_newline = true
 
-[{package,package-lock,tsconfig}.json]
+[{package,package-lock,tsconfig,.prettierrc}.json]
 indent_size = 3
 
 [*.{ts,js}]

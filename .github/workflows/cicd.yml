@@ -4,16 +4,18 @@ on:
   pull_request:
   push:
     branches:
-      - "release/**"
+      - 'release/**'
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   run-tests:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
-      - name: jest
-        run: |
-          yarn install --frozen-lockfile
-          yarn test
+      - name: Install deps
+        run: yarn install --frozen-lockfile
+      - name: Lint
+        run: yarn lint
+      - name: Test
+        run: yarn test

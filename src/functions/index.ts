@@ -1,23 +1,28 @@
-import * as core from "@actions/core";
-import { context, getOctokit } from "@actions/github";
-import SemVer from "semver/classes/semver";
-import coerce from "semver/functions/coerce";
-import semverGt from "semver/functions/gt";
-import major from "semver/functions/major";
-import semverParse from "semver/functions/parse";
-import valid from "semver/functions/valid";
-import { GraphQlQueryRepository, LatestRelease, preferences, queryAllRefs, TaggedRelease } from ".";
+import * as core from '@actions/core';
+import { context, getOctokit } from '@actions/github';
+import SemVer from 'semver/classes/semver';
+import coerce from 'semver/functions/coerce';
+import semverGt from 'semver/functions/gt';
+import major from 'semver/functions/major';
+import semverParse from 'semver/functions/parse';
+import valid from 'semver/functions/valid';
+import {
+    GraphQlQueryRepository,
+    LatestRelease,
+    preferences,
+    queryAllRefs,
+    TaggedRelease,
+} from '@actionstagger';
 
 type GitHub = ReturnType<typeof getOctokit>;
 
 namespace Functions {
-
     /**
      * Checks if the event that triggered this action was a release
      * See: https://developer.github.com/v3/activity/events/types/#releaseevent
      */
     function isRelease(): boolean {
-        return context.eventName === "release";
+        return context.eventName === 'release';
     }
 
     /**
@@ -37,8 +42,53 @@ namespace Functions {
      * Is a release available to the public?
      * A pre-release is usually considered "not ready" for public use
      */
-     function isPublicRelease(): boolean {
+    function isPublicRelease(): boolean {
         return isRelease() && !isPreRelease();
+    }
+
+    /**
+     * Creates the given ref for this release
+     * refName must begin with tags/ or heads/
+     *
+     * @param github The github client
+     * @param refName The name of the ref to use. ex tags/latest, heads/v1, etc
+     */
+    async function createRef(github: GitHub, refName: string) {
+        const { data: matchingRefs } = await github.rest.git.listMatchingRefs({
+            ...context.repo,
+            ref: refName,
+        });
+
+        const matchingRef = matchingRefs.find((refObj: { ref: string }) => {
+            return refObj.ref.endsWith(refName);
+        });
+
+        let upstreamRef: unknown;
+
+        if (matchingRef !== undefined) {
+            core.info(`Updating ref: ${refName} to: ${process.env.GITHUB_SHA}`);
+            ({ data: upstreamRef } = await github.rest.git.updateRef({
+                ...context.repo,
+                force: true,
+                ref: refName,
+                sha: process.env.GITHUB_SHA,
+            }));
+        } else {
+            core.info(`Creating ref: refs/${refName} for: ${process.env.GITHUB_SHA}`);
+            ({ data: upstreamRef } = await github.rest.git.createRef({
+                ...context.repo,
+                ref: `refs/${refName}`,
+                sha: process.env.GITHUB_SHA,
+            }));
+        }
+
+        if (core.isDebug()) {
+            core.debug(
+                `${JSON.stringify(upstreamRef)} now points to: "${
+                    process.env.GITHUB_SHA
+                }"`
+            );
+        }
     }
 
     /**
@@ -59,14 +109,14 @@ namespace Functions {
      * Check if this release is publically available and has been published
      */
     export function isPublishedRelease(): boolean {
-        return isPublicRelease() && context.payload.action === "published";
+        return isPublicRelease() && context.payload.action === 'published';
     }
 
     /**
      * Check if this release is publically available and has been edited
      */
     export function isEditedRelease(): boolean {
-        return isPublicRelease() && context.payload.action === "edited";
+        return isPublicRelease() && context.payload.action === 'edited';
     }
 
     /**
@@ -88,9 +138,9 @@ namespace Functions {
      */
     export function getPreferredRef(): string {
         if (preferences.preferBranchRelease) {
-            return "heads";
+            return 'heads';
         }
-        return "tags";
+        return 'tags';
     }
 
     /**
@@ -115,16 +165,17 @@ namespace Functions {
         const major = Functions.majorVersion();
 
         if (core.isDebug()) {
-            core.debug("Found the following releases in this repository:");
+            core.debug('Found the following releases in this repository:');
         }
 
-        for (let nextPage: string; true;) {
-            const { repository }: { repository: GraphQlQueryRepository } = await github.graphql(queryAllRefs, {
-                repoName: context.repo.repo,
-                repoOwner: context.repo.owner,
-                majorRef: `refs/${Functions.getPreferredRef()}/`,
-                pagination: nextPage,
-            });
+        for (let nextPage: string; true; ) {
+            const { repository }: { repository: GraphQlQueryRepository } =
+                await github.graphql(queryAllRefs, {
+                    repoName: context.repo.repo,
+                    repoOwner: context.repo.owner,
+                    majorRef: `refs/${Functions.getPreferredRef()}/`,
+                    pagination: nextPage,
+                });
 
             for (const { ref } of repository.refs.refsList) {
                 const semverRef = semverParse(ref.name);
@@ -168,54 +219,14 @@ namespace Functions {
         const ref = `${Functions.getPreferredRef()}/v${mayor}`;
         await createRef(github, ref);
 
-        const publishLatest: boolean = overridePublishLatest ?? preferences.publishLatestTag;
+        const publishLatest: boolean =
+            overridePublishLatest ?? preferences.publishLatestTag;
         if (publishLatest) {
-            // TODO v3: `${Functions.getPreferredRef()}/latest`
-            await createRef(github, "tags/latest");
+            // TODO v3: `${getPreferredRef()}/latest`
+            await createRef(github, 'tags/latest');
         }
 
         return { ref, latest: publishLatest };
-    }
-
-    /**
-     * Creates the given ref for this release
-     * refName must begin with tags/ or heads/
-     *
-     * @param github The github client
-     * @param refName The name of the ref to use. ex tags/latest, heads/v1, etc
-     */
-    async function createRef(github: GitHub, refName: string) {
-        const { data: matchingRefs } = await github.rest.git.listMatchingRefs({
-            ...context.repo,
-            ref: refName,
-        });
-
-        const matchingRef = matchingRefs.find((refObj: { ref: string }) => {
-            return refObj.ref.endsWith(refName);
-        });
-
-        let upstreamRef: unknown;
-
-        if (matchingRef !== undefined) {
-            core.info(`Updating ref: ${refName} to: ${process.env.GITHUB_SHA}`);
-            ({ data: upstreamRef } = await github.rest.git.updateRef({
-                ...context.repo,
-                force: true,
-                ref: refName,
-                sha: process.env.GITHUB_SHA,
-            }));
-        } else {
-            core.info(`Creating ref: refs/${refName} for: ${process.env.GITHUB_SHA}`);
-            ({ data: upstreamRef } = await github.rest.git.createRef({
-                ...context.repo,
-                ref: `refs/${refName}`,
-                sha: process.env.GITHUB_SHA,
-            }));
-        }
-
-        if (core.isDebug()) {
-            core.debug(`${JSON.stringify(upstreamRef)} now points to: "${process.env.GITHUB_SHA}"`);
-        }
     }
 
     /**
@@ -223,9 +234,9 @@ namespace Functions {
      * @param refName The tag version
      */
     export function outputTagName(refName: string) {
-        core.setOutput("tag", refName);
+        core.setOutput('tag', refName);
         // TODO: Deprecate: v3
-        core.setOutput("ref_name", refName);
+        core.setOutput('ref_name', refName);
     }
 
     /**
@@ -233,7 +244,7 @@ namespace Functions {
      * @param isLatest
      */
     export function outputLatest(isLatest: boolean) {
-        core.setOutput("latest", isLatest.toString());
+        core.setOutput('latest', isLatest.toString());
     }
 }
 

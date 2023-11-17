@@ -1,5 +1,5 @@
 beforeEach(() => jest.resetModules());
 
-test("placeholder", () => {
+test('placeholder', () => {
     expect(true).toBeTruthy;
-})
+});

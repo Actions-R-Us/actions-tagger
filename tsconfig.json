@@ -3,18 +3,18 @@
       "target": "es5",
       "module": "commonjs",
       "outDir": "lib",
+      "sourceMap": true,
       "alwaysStrict": true,
       "moduleResolution": "node",
+      "allowSyntheticDefaultImports": true,
+      "resolveJsonModule": true,
       "noImplicitAny": true,
+      "isolatedModules": true,
       "esModuleInterop": true,
       "noUnusedLocals": true,
-      "charset": "utf-8",
-      "baseUrl": ".",
       "paths": {
-         "src/*": ["src/*"]
+         "@actionstagger/*": ["./src/*"],
+         "@actionstagger": ["./src"]
       }
-   },
-   "typeAcquisition": {
-      "enable": true
    }
 }

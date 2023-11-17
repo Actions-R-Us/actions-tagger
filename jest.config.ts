@@ -1,21 +1,20 @@
-import { Config } from '@jest/types';
+import { pathsToModuleNameMapper } from 'ts-jest';
+import { compilerOptions } from './tsconfig.json';
+import type { JestConfigWithTsJest } from 'ts-jest';
 
-// https://kulshekhar.github.io/ts-jest/user/config/
+// https://kulshekhar.github.io/ts-jest/docs/getting-started/paths-mapping
 // https://jestjs.io/docs/en/configuration
 
 // https://docs.github.com/en/actions/configuring-and-managing-workflows/using-environment-variables#default-environment-variables
-
-const config: Config.InitialOptions = {
-    bail: process.env.CI == "true" ? 0 : 1,
-    preset: "ts-jest",
-    testEnvironment: "node",
-    moduleNameMapper: {
-        // Note: Order is IMPORTANT!
-        // Inner modules before outer ones
-        "^src(?:/(.+))?$": ["<rootDir>/src/$1", "<rootDir>/src"],
-    },
-    verbose: false,
-    globalSetup: "<rootDir>/tests/test-setup.ts",
+const config: JestConfigWithTsJest = {
+    bail: process.env.CI == 'true' ? 0 : 1,
+    preset: 'ts-jest',
+    testEnvironment: 'node',
+    roots: ['<rootDir>'],
+    moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
+        prefix: '<rootDir>/',
+    }),
+    globalSetup: '<rootDir>/tests/test-setup.ts',
 };
 
 export default config;
