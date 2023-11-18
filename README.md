@@ -81,8 +81,9 @@ on:
       - edited
   push: #(1)
     tags-ignore:
-      - 'v[0-9]+'
       - 'latest'
+      - 'v[0-9]+'
+      - '!v[0-9]+.*'
     branches-ignore:
       - '**'
     paths-ignore:

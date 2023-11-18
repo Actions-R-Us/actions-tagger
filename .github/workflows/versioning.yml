@@ -5,14 +5,21 @@ on:
     types:
       - published
       - edited
+  push: #(1)
+    tags-ignore:
+      - 'latest'
+      - 'v[0-9]+'
+      - '!v[0-9]+.*'
+    branches-ignore:
+      - '**'
+    paths-ignore:
+      - '**'
 
 jobs:
-  run-tag-latest:
+  tag-latest:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.ref }}
+      - uses: actions/checkout@v4
       - uses: ./
         with:
           publish_latest_tag: true
