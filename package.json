@@ -1,15 +1,18 @@
 {
-   "name": "actions-tagger",
+   "name": "actionstagger",
    "version": "2.1.0-rc1",
    "repository": {
       "type": "git",
       "url": "git+https://github.com/Actions-R-Us/actions-tagger.git"
    },
-   "main": "lib/index.js",
+   "engines": {
+      "node": ">=20"
+   },
+   "main": "./lib/index.js",
    "scripts": {
-      "watch": "ncc build src/main.ts --watch",
-      "build": "ncc build src/main.ts --license LICENSE --minify --out lib",
-      "lint": "tsc --noEmit --skipLibCheck",
+      "watch": "ncc build src/index.ts --watch",
+      "build": "ncc build src/index.ts --license LICENSE --minify --out lib",
+      "lint": "tsc && tsc -p ./tests",
       "test": "jest"
    },
    "author": {
@@ -24,6 +27,7 @@
       "semver": "^7.5.4"
    },
    "devDependencies": {
+      "@octokit/webhooks-types": "^7.3.1",
       "@types/jest": "~29.5.8",
       "@types/node": "~20.9.0",
       "@types/semver": "^7.5.5",
