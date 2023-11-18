@@ -1,25 +1,18 @@
 import * as core from '@actions/core';
-import { context, getOctokit } from '@actions/github';
+import { context } from '@actions/github';
 import SemVer from 'semver/classes/semver';
 import coerce from 'semver/functions/coerce';
 import semverGt from 'semver/functions/gt';
 import major from 'semver/functions/major';
 import semverParse from 'semver/functions/parse';
 import valid from 'semver/functions/valid';
-import {
-    GraphQlQueryRepository,
-    LatestRelease,
-    preferences,
-    queryAllRefs,
-    TaggedRelease,
-} from '@actionstagger';
-
-type GitHub = ReturnType<typeof getOctokit>;
+import { preferences, queryAllRefs } from '@actionstagger/util';
+import type { GitHub, GraphQlQueryRepository, TaggedRef, LatestRef } from './types';
 
 namespace Functions {
     /**
      * Checks if the event that triggered this action was a release
-     * See: https://developer.github.com/v3/activity/events/types/#releaseevent
+     * See: https://docs.github.com/en/webhooks/webhook-events-and-payloads#release
      */
     function isRelease(): boolean {
         return context.eventName === 'release';
@@ -31,8 +24,8 @@ namespace Functions {
      *
      * For some reason, it is not enough to check if the action is
      * prereleased, because even prereleases have the action of "published"
-     * See: https://github.community/t5/GitHub-Actions/Release-Prerelease-action-triggers/m-p/42177#M4892
-     * See also: https://developer.github.com/v3/activity/events/types/#releaseevent
+     * See: https://github.com/orgs/community/discussions/26281
+     * See also: https://docs.github.com/en/webhooks/webhook-events-and-payloads#release
      */
     function isPreRelease(): boolean {
         return context.payload.release?.prerelease === true;
@@ -44,6 +37,29 @@ namespace Functions {
      */
     function isPublicRelease(): boolean {
         return isRelease() && !isPreRelease();
+    }
+
+    /**
+     * Checks if the event that triggered this action was a push
+     * See: https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
+     */
+    function isPush(): boolean {
+        return context.eventName === 'push';
+    }
+
+    /**
+     * Check if the push event created a new ref
+     */
+    function isNewRefPush(): boolean {
+        return isPush() && context.payload.created === true;
+    }
+
+    function isBranchPush(): boolean {
+        return isNewRefPush() && context.payload.ref.startsWith(`refs/heads/`);
+    }
+
+    function isTagPush(): boolean {
+        return isNewRefPush() && context.payload.ref.startsWith(`refs/tags/`);
     }
 
     /**
@@ -92,12 +108,60 @@ namespace Functions {
     }
 
     /**
+     * List all the refs in the repository based on user's preferred ref
+     *
+     * @param github The github client
+     */
+    async function* listAllRefs(github: GitHub) {
+        for (let nextPage: string; true; ) {
+            const { repository }: { repository: GraphQlQueryRepository } =
+                await github.graphql(queryAllRefs, {
+                    repoName: context.repo.repo,
+                    repoOwner: context.repo.owner,
+                    majorRef: `refs/${Functions.getPreferredRef()}/`,
+                    pagination: nextPage,
+                });
+
+            for (const { ref } of repository.refs.refsList) {
+                const semverRef = semverParse(ref.name);
+                if (semverRef !== null) {
+                    if (core.isDebug()) {
+                        core.debug(`checking ${ref.name}`);
+                    }
+                    yield [semverRef, ref.object.shaId] as const;
+                } else if (core.isDebug()) {
+                    core.debug(`ignoring ${ref.name}`);
+                }
+            }
+
+            if (repository.refs.pageInfo.hasNextPage) {
+                nextPage = repository.refs.pageInfo.endCursor;
+            } else {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Get the ref version for the current push
+     *
+     * @returns the ref for this release (if any)
+     */
+    function getPushRefVersion(): SemVer {
+        let refName: string | SemVer = (context.payload.ref as string)?.replace(
+            new RegExp(`^refs/${Functions.getPreferredRef()}/`),
+            ''
+        );
+        return semverParse(refName);
+    }
+
+    /**
      * Get the actual tag version for this release. It also takes into account
      * whether or not this is a prerelease
      *
      * @returns the tag for this release (if any)
      */
-    export function releaseTag(): SemVer {
+    function getReleaseTag(): SemVer {
         let tagName: string | SemVer = context.payload.release?.tag_name;
         if (isPreRelease()) {
             tagName = coerce(tagName);
@@ -120,23 +184,51 @@ namespace Functions {
     }
 
     /**
-     * Checks if the tag version of the release is valid semantic version
+     * Check if this event was a new tag push
      */
-    export function isSemVersionedRelease(): boolean {
-        return valid(Functions.releaseTag()) !== null;
+    export function isRefPush(): boolean {
+        return isBranchPush() || isTagPush();
+    }
+
+    export async function isRefLatestMajor(github: GitHub): Promise<boolean> {
+        if (Functions.isRefPush()) {
+            const major = majorVersion();
+            const { data: majorRef } = await github.rest.git.getRef({
+                ...context.repo,
+                ref: `${Functions.getPreferredRef()}/v${major}`,
+            });
+            return majorRef?.object.sha === process.env.GITHUB_SHA;
+        }
+        return false;
+    }
+
+    /**
+     * Get the tag version being published via push or release event
+     *
+     * @returns The tag being published
+     */
+    export function getPublishRefVersion(): SemVer {
+        return Functions.isRefPush() ? getPushRefVersion() : getReleaseTag();
+    }
+
+    /**
+     * Checks if the tag version of the pushed tag/release has valid version
+     */
+    export function isSemVersionedTag(): boolean {
+        return valid(Functions.getPublishRefVersion()) !== null;
     }
 
     /**
      * Get the major number of the release tag
      */
     export function majorVersion(): number {
-        return major(Functions.releaseTag());
+        return major(Functions.getPublishRefVersion());
     }
 
     /**
      * Returns the appropriate ref depending on the input preferences
      */
-    export function getPreferredRef(): string {
+    export function getPreferredRef() {
         if (preferences.preferBranchRelease) {
             return 'heads';
         }
@@ -144,64 +236,40 @@ namespace Functions {
     }
 
     /**
-     * Finds the latest release in the repository as well as the latest release
-     * for this release major version. We do this to determine if we should proceed
+     * Finds the latest refs in the repository as well as the latest ref
+     * for this event's major version. We do this to determine if we should proceed
      * with promoting the major and latest refs.
      *
-     * e.g. if the current release which triggered this actions is tagged v3.2.2,
-     * but the latest release is v4.0.3, a possible return value may be
+     * e.g. if the current ref which triggered this actions is tagged v3.2.2,
+     * but the latest ref is v4.0.3, a possible return value may be
      * {repoLatest: "v4.0.3", majorLatest: "v3.3.0"} (this is not a typo, keep reading).
-     * In this case, this release should not trigger an update because the release is
+     * In this case, this event should not trigger an update because it is
      * targetting a lower version than the latest v3 (v3.3.0) and we already have a latest version
      * which is v4.0.3
      *
      * @param {GitHub} github The octokit client instance
      */
-    export async function findLatestReleases(github: GitHub): Promise<LatestRelease> {
-        const releaseVer = Functions.releaseTag();
-        let repoLatest = releaseVer;
-        let majorLatest = repoLatest;
+    export async function findLatestRef(github: GitHub): Promise<LatestRef> {
+        let [majorLatest, majorSha] = [
+            Functions.getPublishRefVersion(),
+            process.env.GITHUB_SHA,
+        ];
+        let [repoLatest, repoSha] = [majorLatest, majorSha];
 
-        const major = Functions.majorVersion();
-
-        if (core.isDebug()) {
-            core.debug('Found the following releases in this repository:');
-        }
-
-        for (let nextPage: string; true; ) {
-            const { repository }: { repository: GraphQlQueryRepository } =
-                await github.graphql(queryAllRefs, {
-                    repoName: context.repo.repo,
-                    repoOwner: context.repo.owner,
-                    majorRef: `refs/${Functions.getPreferredRef()}/`,
-                    pagination: nextPage,
-                });
-
-            for (const { ref } of repository.refs.refsList) {
-                const semverRef = semverParse(ref.name);
-                if (semverRef !== null) {
-                    if (semverRef.major === major && semverGt(semverRef, majorLatest)) {
-                        majorLatest = semverRef;
-                    }
-
-                    if (semverGt(semverRef, repoLatest)) {
-                        repoLatest = semverRef;
-                    }
-
-                    if (core.isDebug()) {
-                        core.debug(ref.name);
-                    }
-                }
+        const major = majorLatest.major;
+        for await (const [semverRef, shaId] of listAllRefs(github)) {
+            if (semverRef.major === major && semverGt(semverRef, majorLatest)) {
+                [majorLatest, majorSha] = [semverRef, shaId];
             }
 
-            if (repository.refs.pageInfo.hasNextPage) {
-                nextPage = repository.refs.pageInfo.endCursor;
-            } else {
-                break;
+            if (semverGt(semverRef, repoLatest)) {
+                [repoLatest, repoSha] = [semverRef, shaId];
             }
         }
-
-        return { repoLatest: repoLatest.version, majorLatest: majorLatest.version };
+        return {
+            repoLatest: { name: repoLatest.version, shaId: repoSha },
+            majorLatest: { name: majorLatest.version, shaId: majorSha },
+        };
     }
 
     /**
@@ -213,38 +281,22 @@ namespace Functions {
     export async function createRequiredRefs(
         github: GitHub,
         overridePublishLatest?: boolean
-    ): Promise<TaggedRelease> {
+    ): Promise<TaggedRef> {
         const mayor = Functions.majorVersion();
 
         const ref = `${Functions.getPreferredRef()}/v${mayor}`;
         await createRef(github, ref);
 
-        const publishLatest: boolean =
-            overridePublishLatest ?? preferences.publishLatestTag;
+        const publishLatest: boolean = overridePublishLatest ?? preferences.publishLatest;
         if (publishLatest) {
             // TODO v3: `${getPreferredRef()}/latest`
             await createRef(github, 'tags/latest');
         }
 
-        return { ref, latest: publishLatest };
-    }
-
-    /**
-     * Sets the output of this action to indicate the version that was published/updated
-     * @param refName The tag version
-     */
-    export function outputTagName(refName: string) {
-        core.setOutput('tag', refName);
-        // TODO: Deprecate: v3
-        core.setOutput('ref_name', refName);
-    }
-
-    /**
-     * Sets the output of this action to indicate if the latest tag was published
-     * @param isLatest
-     */
-    export function outputLatest(isLatest: boolean) {
-        core.setOutput('latest', isLatest.toString());
+        return {
+            ref,
+            latest: publishLatest,
+        };
     }
 }
 
