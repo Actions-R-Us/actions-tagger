@@ -9,7 +9,6 @@
       "noEmit": true,
       "skipLibCheck": true,
       "resolveJsonModule": true,
-      "allowSyntheticDefaultImports": true,
       "noImplicitAny": true,
       "isolatedModules": true,
       "esModuleInterop": true,

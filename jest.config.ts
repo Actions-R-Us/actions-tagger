@@ -21,6 +21,7 @@ const config: JestConfigWithTsJest = {
     moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
         prefix: '<rootDir>/',
     }),
+    verbose: true,
     globalSetup: '<rootDir>/tests/test-setup.ts',
 };
 

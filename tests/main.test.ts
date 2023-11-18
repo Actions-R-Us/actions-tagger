@@ -1,5 +1,5 @@
 beforeEach(() => jest.resetModules());
 
-test('placeholder', () => {
+test.skip('placeholder', () => {
     expect(true).toBeTruthy;
 });

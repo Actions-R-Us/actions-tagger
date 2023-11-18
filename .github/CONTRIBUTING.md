@@ -2,22 +2,23 @@
 
 <h2 style="color: red; font-weight: bold">DON'T</h2>
 
-### **Never create a pull request for master.**
+- #### Never create a pull request for master.
 
 <h2 style="color: green; font-weight: bold">DO</h2>
 
-- ### Checkout a release branch corresponding to the version you want to contribute to
-- ### Make your changes and create a pull request for that branch
-- ### Your request will be merged to master once it is reviewed
+- **Checkout a release branch corresponding to the version you want to contribute to**
+- **Make your changes and create a pull request for that branch**
+- **Your request will be merged to master once it is reviewed**
 
 ---
 ## Development
 -
   ```bash
-  npm install
-  npm run test
+  yarn install
+  yarn test
   ```
 - Make your changes
+- Add tests if you want
 - Push to your branch
 - Ping maintainer (@smac89) when PR is ready
 
@@ -26,8 +27,7 @@
 - Make other changes if necessary
 - If this warrants a new release, then do the following
   - Bump version in `package.json` to next release version
-  - Create a temporary branch which will contain `lib/index.js`
-  - Run `npm run build` in that branch and commit the changes
+  - Run `scripts/releaser.sh`
   - Create a new release based on this temporary branch and add release notes
   - Delete temporary branch
 - If the release branch is the latest
