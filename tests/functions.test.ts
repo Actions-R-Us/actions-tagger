@@ -3,10 +3,14 @@ import type { GraphQlQueryRepository } from '@actionstagger/functions/types';
 import fs from 'node:fs';
 import os from 'node:os';
 
-beforeEach(() => jest.resetModules());
-afterEach(() => jest.restoreAllMocks());
-
 describe('Functions', () => {
+    beforeEach(() => {
+        jest.resetModules();
+    });
+    afterEach(() => {
+        jest.resetAllMocks();
+    });
+
     describe.each([
         { preferbranchReleases: false, expected: 'tags' },
         { preferbranchReleases: true, expected: 'heads' },
@@ -45,18 +49,19 @@ describe('Functions', () => {
                 };
                 fs.writeFileSync(`${dir}/event.json`, JSON.stringify(pushEvent));
                 process.env.GITHUB_EVENT_PATH = `${dir}/event.json`;
-            });
-
-            afterEach(() => {
-                fs.rmSync(dir, { recursive: true });
-            });
-
-            test(`on ${eventName} when INPUT_PREFER_BRANCH_RELEASES=${preferbranchReleases}, pushed ref=${githubRef}, expected=${expected}`, async () => {
                 process.env.INPUT_PREFER_BRANCH_RELEASES =
                     preferbranchReleases.toString();
                 process.env.GITHUB_EVENT_NAME = eventName;
                 process.env.GITHUB_REF_NAME = githubRef.replace(/refs\/.+\//g, '');
                 process.env.GITHUB_REF = githubRef;
+            });
+
+            afterEach(() => {
+                fs.rmSync(dir, { recursive: true });
+                delete process.env.GITHUB_EVENT_PATH;
+            });
+
+            test(`on ${eventName} when INPUT_PREFER_BRANCH_RELEASES=${preferbranchReleases}, pushed ref=${githubRef}, returns=${expected}`, async () => {
                 await import('@actionstagger/functions').then(
                     ({ default: { getPublishRefVersion } }) =>
                         expect(getPublishRefVersion().version).toBe(expected)
@@ -87,14 +92,15 @@ describe('Functions', () => {
             };
             fs.writeFileSync(`${dir}/event.json`, JSON.stringify(releaseEvent));
             process.env.GITHUB_EVENT_PATH = `${dir}/event.json`;
+            process.env.GITHUB_EVENT_NAME = eventName;
         });
 
         afterEach(() => {
             fs.rmSync(dir, { recursive: true });
+            delete process.env.GITHUB_EVENT_PATH;
         });
 
-        test(`on ${eventName}, release tag=${tagName}, expected=${expected}`, async () => {
-            process.env.GITHUB_EVENT_NAME = eventName;
+        test(`on ${eventName}, release tag=${tagName}, returns=${expected}`, async () => {
             await import('@actionstagger/functions').then(
                 ({ default: { getPublishRefVersion } }) =>
                     expect(getPublishRefVersion().version).toBe(expected)
@@ -102,60 +108,78 @@ describe('Functions', () => {
         });
     });
 
-    describe('#findLatestRef()', () => {
+    describe.each([
+        {
+            pushedRef: 'v3.2.2',
+            existing: 'v3.3.0',
+            repoLatest: 'v4.0.0',
+            expected: ['4.0.0', '3.3.0'],
+        },
+        {
+            pushedRef: 'v3.2.0',
+            expected: ['3.2.0', '3.2.0'],
+        },
+        {
+            pushedRef: 'v3.3.0',
+            existing: 'v3.2.2',
+            repoLatest: 'v4.0.0',
+            expected: ['4.0.0', '3.3.0'],
+        },
+    ])('#findLatestRef()', ({ pushedRef, existing, repoLatest, expected }) => {
         const octokit = getOctokit('TEST_TOKEN');
+        const refsList: GraphQlQueryRepository['refs']['refsList'] = [
+            existing,
+            repoLatest,
+        ]
+            .filter(Boolean)
+            .map((version, i) => ({
+                ref: {
+                    name: version,
+                    object: {
+                        shaId: `${i + 1}`,
+                    },
+                },
+            }));
 
-        it('Should find the latest release when only one release exists', async () => {
-            const currentTag = '3.0.1';
-            // YES, this 'require' only works in this scope. Don't ask me why, ask the JS/Jest gods
-            const semverTag = require('semver/functions/parse')(`v${currentTag}`);
-            const spyOctokit = jest
-                .spyOn(octokit, 'graphql')
-                .mockImplementation(async () =>
-                    Promise.resolve<{ repository: GraphQlQueryRepository }>({
-                        repository: {
-                            refs: {
-                                refsList: [
-                                    {
-                                        ref: {
-                                            name: `v${currentTag}`,
-                                            object: {
-                                                shaId: 'test',
-                                            },
-                                        },
-                                    },
-                                ],
-                                pageInfo: {
-                                    endCursor: 'MTA',
-                                    hasNextPage: false,
-                                },
-                                totalCount: 1,
-                            },
-                        },
-                    })
-                );
+        beforeEach(() => {
+            const semverTag = require('semver/functions/parse')(pushedRef);
 
             jest.doMock('@actionstagger/functions', () => {
                 const MockFunctions = jest.requireActual<
                     typeof import('@actionstagger/functions')
                 >('@actionstagger/functions').default;
-                MockFunctions.getPublishRefVersion = jest.fn();
+                MockFunctions.getPublishRefVersion = jest.fn().mockReturnValue(semverTag);
                 return {
                     __esModule: true,
                     default: MockFunctions,
                 };
             });
+        });
 
-            await import('@actionstagger/functions').then(
-                async ({ default: { findLatestRef, getPublishRefVersion } }) => {
-                    // @ts-ignore
-                    getPublishRefVersion.mockReturnValue(semverTag);
-                    await findLatestRef(octokit).then(({ repoLatest }) => {
-                        expect(spyOctokit).toHaveBeenCalledTimes(1);
-                        expect(repoLatest.name).toBe(currentTag);
-                    });
-                }
+        test(`when new release or push of ${pushedRef}, and ref with name ${existing} exists and latest ref is ${repoLatest}, returns [${expected.join(
+            ', '
+        )}]`, async () => {
+            const spyOctokit = jest.spyOn(octokit, 'graphql').mockResolvedValue(
+                Promise.resolve<{ repository: GraphQlQueryRepository }>({
+                    repository: {
+                        refs: {
+                            refsList,
+                            pageInfo: {
+                                endCursor: 'MTA',
+                                hasNextPage: false,
+                            },
+                            totalCount: refsList.length,
+                        },
+                    },
+                })
             );
+            const {
+                default: { findLatestRef },
+            } = await import('@actionstagger/functions');
+            await findLatestRef(octokit).then(({ repoLatest, majorLatest }) => {
+                expect(spyOctokit).toHaveBeenCalledTimes(1);
+                expect([repoLatest.name, majorLatest.name]).toEqual(expected);
+            });
         });
     });
 });
