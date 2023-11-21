@@ -6,6 +6,7 @@
       "moduleResolution": "Node"
    },
    "include": [
-      "*.ts"
+      "*.ts",
+      "../index.d.ts"
    ]
 }
