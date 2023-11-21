@@ -1,0 +1,6 @@
+{
+   ".ts, .js": {
+      "style": "module-scoped",
+      "parser": "typescript"
+   }
+}

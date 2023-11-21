@@ -12,11 +12,20 @@
       "noImplicitAny": true,
       "isolatedModules": true,
       "esModuleInterop": true,
+      "strictNullChecks": true,
       "noUnusedLocals": true,
+      "forceConsistentCasingInFileNames": true,
       "paths": {
-         "@actionstagger/*": ["./src/*"],
-         "@actionstagger": ["./src"]
+         "@actionstagger/*": [
+            "./src/*"
+         ],
+         "@actionstagger": [
+            "./src"
+         ]
       }
    },
-   "include": ["src/**/*", "jest.config.ts"]
+   "include": [
+      "src/**/*.ts",
+      "jest.config.ts"
+   ]
 }

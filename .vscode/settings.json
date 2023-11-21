@@ -1,7 +1,11 @@
 {
-  "files.exclude": {
-    "node_modules": true
-  },
-  "typescript.tsdk": "./node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": false
+   "typescript.tsdk": "./node_modules/typescript/lib",
+   "typescript.enablePromptUseWorkspaceTsdk": false,
+   "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+   },
+   "editor.formatOnSave": true,
+   "files.associations": {
+      ".*rc": "json"
+   }
 }
