@@ -4,8 +4,14 @@
    "[typescript]": {
       "editor.defaultFormatter": "esbenp.prettier-vscode"
    },
+   "[jsonc]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+   },
+   "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+   },
    "editor.formatOnSave": true,
    "files.associations": {
-      ".*rc": "json"
+      ".importsortrc": "json"
    }
 }
