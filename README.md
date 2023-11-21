@@ -99,16 +99,22 @@ jobs:
         with:
           publish_latest_tag: true
 ```
+
 ---
 
 ### Notes
 
-1. Add the push configuration if you want this action to also run when a new tag or branch is created.
+1. Add the push configuration if you want this action to also run when a new tag
+   or branch is created.
 
-   **An event will [not be created](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#push) when more than three tags are pushed at once.**
+   **An event will
+   [not be created](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#push)
+   when more than three tags are pushed at once.**
 
-   If you want to track branches, swap the filters listed under `branches-ignore`
-   and `tags-ignore`. At all times, leave the filter for `paths-ignore` as is.
+   If you want to track branches, swap the filters listed under
+   `branches-ignore` and `tags-ignore`. At all times, leave the filter for
+   `paths-ignore` as is.
+
 2. The
    [`permissions`](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions)
    option is only required if the workflow permission for the given repository

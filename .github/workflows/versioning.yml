@@ -1,4 +1,4 @@
-name: "Tag latest release of action tagger :zap:"
+name: 'Tag latest release of action tagger :zap:'
 
 on:
   release:
