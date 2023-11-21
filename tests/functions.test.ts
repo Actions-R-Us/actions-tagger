@@ -4,16 +4,18 @@ import os from 'node:os';
 import { getOctokit } from '@actions/github';
 import type { GraphQlQueryRepository } from '@actionstagger/functions/types';
 
-beforeEach(() => jest.resetModules());
-afterEach(() => jest.resetAllMocks());
-
 describe('Functions', () => {
+  beforeEach(() => jest.resetModules());
+  afterEach(() => jest.restoreAllMocks());
+
   describe.each([
     { preferbranchReleases: 'false', expected: 'tags' },
     { preferbranchReleases: 'true', expected: 'heads' },
   ])('#getPreferredRef()', ({ preferbranchReleases, expected }) => {
     test(`when INPUT_PREFER_BRANCH_RELEASES=${preferbranchReleases} returns ${expected}`, async () => {
-      process.env.INPUT_PREFER_BRANCH_RELEASES = preferbranchReleases;
+      jest.replaceProperty(process, 'env', {
+        INPUT_PREFER_BRANCH_RELEASES: preferbranchReleases,
+      });
       await import('@actionstagger/functions/public').then(({ default: { getPreferredRef } }) =>
         expect(getPreferredRef()).toBe(expected)
       );
@@ -42,17 +44,17 @@ describe('Functions', () => {
         created: true,
       };
       fs.writeFileSync(`${dir}/event.json`, JSON.stringify(pushEvent));
-      process.env.GITHUB_EVENT_PATH = `${dir}/event.json`;
-      process.env.INPUT_PREFER_BRANCH_RELEASES = preferbranchReleases;
-      process.env.GITHUB_EVENT_NAME = eventName;
-      process.env.GITHUB_REF_NAME = githubRef.replace(/refs\/.+\//g, '');
-      process.env.GITHUB_REF = githubRef;
+      jest.replaceProperty(process, 'env', {
+        GITHUB_EVENT_PATH: `${dir}/event.json`,
+        INPUT_PREFER_BRANCH_RELEASES: preferbranchReleases,
+        GITHUB_EVENT_NAME: eventName,
+        GITHUB_REF_NAME: githubRef.replace(/refs\/.+\//g, ''),
+        GITHUB_REF: githubRef,
+      });
     });
 
     afterEach(() => {
       fs.rmSync(dir, { recursive: true });
-      // actions toolkit tries to read this file if it is set, which we don't want
-      delete process.env.GITHUB_EVENT_PATH;
     });
 
     test(`on ${eventName} when INPUT_PREFER_BRANCH_RELEASES=${preferbranchReleases}, pushed ref=${githubRef}, returns=${expected}`, async () => {
@@ -84,14 +86,14 @@ describe('Functions', () => {
         },
       };
       fs.writeFileSync(`${dir}/event.json`, JSON.stringify(releaseEvent));
-      process.env.GITHUB_EVENT_PATH = `${dir}/event.json`;
-      process.env.GITHUB_EVENT_NAME = eventName;
+      jest.replaceProperty(process, 'env', {
+        GITHUB_EVENT_PATH: `${dir}/event.json`,
+        GITHUB_EVENT_NAME: eventName,
+      });
     });
 
     afterEach(() => {
       fs.rmSync(dir, { recursive: true });
-      // actions toolkit tries to read this file if it is set, which we don't want
-      delete process.env.GITHUB_EVENT_PATH;
     });
 
     test(`on ${eventName}, release tag=${tagName}, returns=${expected}`, async () => {
@@ -133,17 +135,16 @@ describe('Functions', () => {
       }));
 
     beforeEach(async () => {
-      const semverTag = (await import('semver/functions/parse')).default(pushedRef);
+      // We need to import it here because jest mucks with the global scope which creates issues
+      // when trying to use `instanceof`.
+      // In this case, if the parse function was imported earlier, it will exist in a different
+      // global scope than the rest of the test. Which leads to infruiating errors when used
+      // to create semver objects such as SemVer is not instanceof SemVer...🙄
+      // In short see https://backend.cafe/should-you-use-jest-as-a-testing-library
+      const semverTag = (await import('semver/functions/parse')).default(pushedRef)!;
 
-      jest.doMock('@actionstagger/functions/public', () => {
-        const MockFunctions = jest.requireActual<typeof import('@actionstagger/functions/public')>(
-          '@actionstagger/functions/public'
-        ).default;
-        MockFunctions.getPublishRefVersion = jest.fn().mockReturnValue(semverTag);
-        return {
-          __esModule: true,
-          default: MockFunctions,
-        };
+      await import('@actionstagger/functions/public').then(functions => {
+        jest.spyOn(functions.default, 'getPublishRefVersion').mockReturnValue(semverTag);
       });
     });
 
@@ -173,6 +174,48 @@ describe('Functions', () => {
         expect(spyOctokit).toHaveBeenCalledTimes(1);
         expect([repoLatest.name, majorLatest.name]).toEqual(expected);
       });
+    });
+  });
+
+  describe.each([
+    {
+      refToCreate: 'v3.3.7',
+      publishLatest: false,
+      expectedRef: 'tags/v3',
+    },
+    {
+      refToCreate: 'v3.3.1',
+      publishLatest: true,
+
+      expectedRef: 'tags/v3',
+    },
+  ])('#createRequiredRefs', ({ refToCreate, publishLatest, expectedRef }) => {
+    const octokit = getOctokit('TEST_TOKEN');
+
+    beforeEach(async () => {
+      const semverTag = (await import('semver/functions/parse')).default(refToCreate)!;
+      await import('@actionstagger/functions/private').then(functions =>
+        jest.spyOn(functions.default, 'createRef').mockResolvedValue(Promise.resolve())
+      );
+
+      await import('@actionstagger/functions/public').then(functions =>
+        jest.spyOn(functions.default, 'getPublishRefVersion').mockReturnValue(semverTag)
+      );
+
+      await import('@actionstagger/functions/public').then(functions =>
+        jest.spyOn(functions.default, 'getPreferredRef').mockReturnValue('tags')
+      );
+    });
+
+    test(`when creating ref for ${refToCreate} and publishLatest=${publishLatest}, will create ${expectedRef} and${
+      publishLatest ? '' : ' not'
+    } publish latest tag`, async () => {
+      await import('@actionstagger/functions/public').then(({ default: { createRequiredRefs } }) =>
+        createRequiredRefs(octokit, publishLatest).then(({ ref, latest }) => {
+          expect(ref).toBe(expectedRef);
+          expect(latest).toBe(publishLatest);
+        })
+      );
     });
   });
 });

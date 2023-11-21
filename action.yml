@@ -7,10 +7,15 @@ description:
   'Keep your action versions up-to-date by automatically promoting a major
   version each time a minor release is created'
 inputs:
-  # TODO v3: rename this to publish_latest and latest will not
-  # default to a tag, but will follow `prefer_branch_release`
+  # TODO v3: remove this
   publish_latest_tag:
-    description: 'Whether or not to also publish a `latest` tag'
+    description: '(Deprecated) Whether or not to also publish a `latest` tag'
+    required: false
+    default: false
+  publish_latest:
+    description:
+      'Whether or not to also publish a `latest` ref (depending on
+      `prefer_branch_releases`)'
     required: false
     default: false
   prefer_branch_releases:

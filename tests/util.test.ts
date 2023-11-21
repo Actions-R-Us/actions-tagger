@@ -13,6 +13,7 @@ describe('preferences.publishLatestTag', () => {
     );
   });
 
+  // TODO: v3 remove this test or set it to failing
   it('Should have been set to true when input is true', async () => {
     process.env.INPUT_PUBLISH_LATEST_TAG = 'true';
     await import('@actionstagger/util').then(({ preferences }) =>

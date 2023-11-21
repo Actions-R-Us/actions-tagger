@@ -35,9 +35,9 @@ export default async function main(): Promise<void> {
   const releaseVer = getPublishRefVersion();
 
   if (semverGte(releaseVer, majorLatest.name)) {
-    const overridePubLatest = preferences.publishLatest && semverGte(releaseVer, repoLatest.name);
+    const publishLatest = preferences.publishLatest && semverGte(releaseVer, repoLatest.name);
 
-    const { ref, latest } = await createRequiredRefs(octokit, overridePubLatest);
+    const { ref, latest } = await createRequiredRefs(octokit, publishLatest);
     outputTagName(ref);
     outputLatest(latest);
   } else if (majorLatest.shaId !== process.env.GITHUB_SHA) {

@@ -19,6 +19,7 @@ const config: JestConfigWithTsJest = {
       },
     ],
   },
+  cache: process.env.CI !== 'true', // disable caching in CI environments
   testEnvironment: 'node',
   roots: ['<rootDir>'],
   // https://kulshekhar.github.io/ts-jest/docs/getting-started/paths-mapping

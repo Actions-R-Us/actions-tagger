@@ -95,7 +95,7 @@ jobs:
     permissions: # (2)
       contents: write
     steps:
-      - uses: Actions-R-Us/actions-tagger@latest
+      - uses: Actions-R-Us/actions-tagger@v2
         with:
           publish_latest_tag: true
 ```

@@ -105,18 +105,17 @@ namespace Functions {
    * Creates the tags required and optionally a 'latest' tag
    *
    * @param {GitHub} github The octokit client for making requests
-   * @param {Boolean} overridePublishLatest Flag used to force the publishing of the latest tag
+   * @param {Boolean} publishLatest Flag used to signal the publishing of the latest tag
    */
   export async function createRequiredRefs(
     github: GitHub,
-    overridePublishLatest?: boolean
+    publishLatest: boolean
   ): Promise<TaggedRef> {
-    const mayor = Functions.majorVersion();
+    const major = Functions.majorVersion();
 
-    const ref = `${Functions.getPreferredRef()}/v${mayor}`;
+    const ref = `${Functions.getPreferredRef()}/v${major}`;
     await Private.createRef(github, ref);
 
-    const publishLatest: boolean = overridePublishLatest ?? preferences.publishLatest;
     if (publishLatest) {
       // TODO v3: `${getPreferredRef()}/latest`
       await Private.createRef(github, 'tags/latest');

@@ -1,5 +1,5 @@
 declare namespace NodeJS {
   interface ProcessEnv {
-    GITHUB_SHA: string;
+    GITHUB_SHA?: string;
   }
 }

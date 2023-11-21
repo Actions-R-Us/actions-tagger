@@ -5,6 +5,7 @@ interface ActionPreferences {
 
 export const preferences: ActionPreferences = {
   publishLatest:
+    // TODO v3: Ignore INPUT_PUBLISH_LATEST_TAG
     (process.env.INPUT_PUBLISH_LATEST ?? process.env.INPUT_PUBLISH_LATEST_TAG)?.toLowerCase() ===
     'true',
   preferBranchRelease: process.env.INPUT_PREFER_BRANCH_RELEASES?.toLowerCase() === 'true',
