@@ -20,5 +20,5 @@
          "@actionstagger": ["./src"]
       }
    },
-   "include": ["src/**/*.ts", "jest.config.ts", "index.d.ts"]
+   "include": ["src/**/*.ts", "jest.config.ts"]
 }

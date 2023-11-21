@@ -79,7 +79,7 @@ namespace Functions {
    * @param {GitHub} github The octokit client instance
    */
   export async function findLatestRef(github: GitHub): Promise<LatestRef> {
-    let [majorLatest, majorSha] = [Functions.getPublishRefVersion(), process.env.GITHUB_SHA];
+    let [majorLatest, majorSha] = [Functions.getPublishRefVersion(), process.env.GITHUB_SHA!];
     let [repoLatest, repoSha] = [majorLatest, majorSha];
 
     const major = majorLatest.major;

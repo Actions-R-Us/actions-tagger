@@ -5,5 +5,5 @@
       "module": "commonjs",
       "moduleResolution": "Node"
    },
-   "include": ["*.ts", "../index.d.ts"]
+   "include": ["*.ts"]
 }

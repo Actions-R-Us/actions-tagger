@@ -92,14 +92,14 @@ namespace Functions.Private {
         ...context.repo,
         force: true,
         ref: refName,
-        sha: process.env.GITHUB_SHA,
+        sha: process.env.GITHUB_SHA!,
       }));
     } else {
       core.info(`Creating ref: refs/${refName} for: ${process.env.GITHUB_SHA}`);
       ({ data: upstreamRef } = await github.rest.git.createRef({
         ...context.repo,
         ref: `refs/${refName}`,
-        sha: process.env.GITHUB_SHA,
+        sha: process.env.GITHUB_SHA!,
       }));
     }
 
