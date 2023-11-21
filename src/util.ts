@@ -1,15 +1,13 @@
 interface ActionPreferences {
-    readonly publishLatest: boolean;
-    readonly preferBranchRelease: boolean;
+  readonly publishLatest: boolean;
+  readonly preferBranchRelease: boolean;
 }
 
 export const preferences: ActionPreferences = {
-    publishLatest:
-        (
-            process.env.INPUT_PUBLISH_LATEST ?? process.env.INPUT_PUBLISH_LATEST_TAG
-        ).toLowerCase() === 'true',
-    preferBranchRelease:
-        process.env.INPUT_PREFER_BRANCH_RELEASES.toLowerCase() === 'true',
+  publishLatest:
+    (process.env.INPUT_PUBLISH_LATEST ?? process.env.INPUT_PUBLISH_LATEST_TAG)?.toLowerCase() ===
+    'true',
+  preferBranchRelease: process.env.INPUT_PREFER_BRANCH_RELEASES?.toLowerCase() === 'true',
 };
 
 // Test the query at: https://docs.github.com/en/graphql/overview/explorer
