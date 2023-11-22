@@ -1,6 +1,6 @@
 {
    "name": "actionstagger",
-   "version": "2.1.0-rc1",
+   "version": "2.1.0-rc2",
    "repository": {
       "type": "git",
       "url": "git+https://github.com/Actions-R-Us/actions-tagger.git"
