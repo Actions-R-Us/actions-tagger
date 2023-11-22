@@ -54,6 +54,12 @@ describe('Functions', () => {
     });
 
     afterEach(() => {
+      fs.readdirSync(dir, { recursive: true }).forEach(file => {
+        fs.rmSync(`${dir}/${file}`);
+      });
+    });
+
+    afterAll(() => {
       fs.rmSync(dir, { recursive: true });
     });
 
@@ -93,6 +99,12 @@ describe('Functions', () => {
     });
 
     afterEach(() => {
+      fs.readdirSync(dir, { recursive: true }).forEach(file => {
+        fs.rmSync(`${dir}/${file}`);
+      });
+    });
+
+    afterAll(() => {
       fs.rmSync(dir, { recursive: true });
     });
 
@@ -121,30 +133,39 @@ describe('Functions', () => {
       repoLatest: 'v4.0.0',
       expected: ['4.0.0', '3.3.0'],
     },
-  ])('#findLatestRef()', ({ pushedRef, existing, repoLatest, expected }) => {
-    const octokit = getOctokit('TEST_TOKEN');
-    const refsList: GraphQlQueryRepository['refs']['refsList'] = [existing, repoLatest]
-      .filter((ref): ref is string => Boolean(ref))
-      .map((version, i) => ({
-        ref: {
-          name: version,
-          object: {
-            shaId: `${i + 1}`,
-          },
-        },
-      }));
-
+  ])('#findLatestRef(github)', ({ pushedRef, existing, repoLatest, expected }) => {
     beforeEach(async () => {
+      const refsList: GraphQlQueryRepository['refs']['refsList'] = [existing, repoLatest]
+        .filter((ref): ref is string => Boolean(ref))
+        .map((version, i) => ({
+          ref: {
+            name: version,
+            object: {
+              shaId: `${i + 1}`,
+            },
+          },
+        }));
       // We need to import it here because jest mucks with the global scope which creates issues
       // when trying to use `instanceof`.
       // In this case, if the parse function was imported earlier, it will exist in a different
       // global scope than the rest of the test. Which leads to infruiating errors when used
       // to create semver objects such as SemVer is not instanceof SemVer...🙄
       // In short see https://backend.cafe/should-you-use-jest-as-a-testing-library
-      const semverTag = (await import('semver/functions/parse')).default(pushedRef)!;
+      const { default: semverParse } = await import('semver/functions/parse');
+      const semverTag = semverParse(pushedRef)!;
 
       await import('@actionstagger/functions/public').then(functions => {
         jest.spyOn(functions.default, 'getPublishRefVersion').mockReturnValue(semverTag);
+      });
+
+      await import('@actionstagger/functions/private').then(functions => {
+        jest.spyOn(functions.default, 'listAllRefs').mockImplementation(async function* () {
+          for (const ref of refsList.map(
+            ({ ref }) => [semverParse(ref.name)!, ref.object.shaId] as const
+          )) {
+            yield ref;
+          }
+        });
       });
     });
 
@@ -153,25 +174,10 @@ describe('Functions', () => {
     } exists and latest ref is ${repoLatest ?? 'unknown'}, returns [${expected.join(
       ', '
     )}]`, async () => {
-      const spyOctokit = jest.spyOn(octokit, 'graphql').mockResolvedValue(
-        Promise.resolve<{ repository: GraphQlQueryRepository }>({
-          repository: {
-            refs: {
-              refsList,
-              pageInfo: {
-                endCursor: 'MTA',
-                hasNextPage: false,
-              },
-              totalCount: refsList.length,
-            },
-          },
-        })
-      );
       const {
         default: { findLatestRef },
       } = await import('@actionstagger/functions/public');
-      await findLatestRef(octokit).then(({ repoLatest, majorLatest }) => {
-        expect(spyOctokit).toHaveBeenCalledTimes(1);
+      await findLatestRef(getOctokit('TEST_TOKEN')).then(({ repoLatest, majorLatest }) => {
         expect([repoLatest.name, majorLatest.name]).toEqual(expected);
       });
     });
@@ -186,36 +192,37 @@ describe('Functions', () => {
     {
       refToCreate: 'v3.3.1',
       publishLatest: true,
-
       expectedRef: 'tags/v3',
     },
-  ])('#createRequiredRefs', ({ refToCreate, publishLatest, expectedRef }) => {
-    const octokit = getOctokit('TEST_TOKEN');
+  ])(
+    '#createRequiredRefs(github, publishLatest)',
+    ({ refToCreate, publishLatest, expectedRef }) => {
+      beforeEach(async () => {
+        const semverTag = (await import('semver/functions/parse')).default(refToCreate)!;
+        await import('@actionstagger/functions/private').then(functions =>
+          jest.spyOn(functions.default, 'createRef').mockResolvedValue()
+        );
 
-    beforeEach(async () => {
-      const semverTag = (await import('semver/functions/parse')).default(refToCreate)!;
-      await import('@actionstagger/functions/private').then(functions =>
-        jest.spyOn(functions.default, 'createRef').mockResolvedValue(Promise.resolve())
-      );
+        await import('@actionstagger/functions/public').then(functions =>
+          jest.spyOn(functions.default, 'getPublishRefVersion').mockReturnValue(semverTag)
+        );
 
-      await import('@actionstagger/functions/public').then(functions =>
-        jest.spyOn(functions.default, 'getPublishRefVersion').mockReturnValue(semverTag)
-      );
+        await import('@actionstagger/functions/public').then(functions =>
+          jest.spyOn(functions.default, 'getPreferredRef').mockReturnValue('tags')
+        );
+      });
 
-      await import('@actionstagger/functions/public').then(functions =>
-        jest.spyOn(functions.default, 'getPreferredRef').mockReturnValue('tags')
-      );
-    });
-
-    test(`when creating ref for ${refToCreate} and publishLatest=${publishLatest}, will create ${expectedRef} and${
-      publishLatest ? '' : ' not'
-    } publish latest tag`, async () => {
-      await import('@actionstagger/functions/public').then(({ default: { createRequiredRefs } }) =>
-        createRequiredRefs(octokit, publishLatest).then(({ ref, latest }) => {
-          expect(ref).toBe(expectedRef);
-          expect(latest).toBe(publishLatest);
-        })
-      );
-    });
-  });
+      test(`when creating ref for ${refToCreate} and publishLatest=${publishLatest}, will create ${expectedRef} and${
+        publishLatest ? '' : ' not'
+      } publish latest tag`, async () => {
+        await import('@actionstagger/functions/public').then(
+          ({ default: { createRequiredRefs } }) =>
+            createRequiredRefs(getOctokit('TEST_TOKEN'), publishLatest).then(({ ref, latest }) => {
+              expect(ref).toBe(expectedRef);
+              expect(latest).toBe(publishLatest);
+            })
+        );
+      });
+    }
+  );
 });
