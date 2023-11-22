@@ -77,7 +77,7 @@ name: Keep the versions up-to-date
 on:
   release:
     types:
-      - published
+      - released
       - edited
   push: #(1)
     tags-ignore:

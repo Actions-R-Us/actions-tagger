@@ -3,7 +3,7 @@ import semverParse from 'semver/functions/parse';
 
 import * as core from '@actions/core';
 import { context } from '@actions/github';
-import { queryAllRefs } from '@actionstagger/util';
+import { preferences, queryAllRefs } from '@actionstagger/util';
 
 import type { GitHub, GraphQlQueryRepository } from './types';
 
@@ -18,11 +18,20 @@ namespace Functions.Private {
   }
 
   /**
+   * Checks if the event that triggered this action was a push
+   * See: https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
+   */
+  export function isPush(): boolean {
+    return context.eventName === 'push';
+  }
+
+  /**
+   * TODO v3: Remove this check because we should not be running for prereleases
    * Check if the event that triggered this actions was as a result
    * of a prerelease or not
    *
    * For some reason, it is not enough to check if the action is
-   * prereleased, because even prereleases have the action of "published"
+   * prereleased of type, because even prereleases have the action of "published"
    * See: https://github.com/orgs/community/discussions/26281
    * See also: https://docs.github.com/en/webhooks/webhook-events-and-payloads#release
    */
@@ -31,19 +40,18 @@ namespace Functions.Private {
   }
 
   /**
+   * @returns true if the tag is a prerelease
+   */
+  export function isPreReleaseRef(): boolean {
+    return (Private.getPushRefVersion()?.prerelease.length ?? 0) > 0;
+  }
+
+  /**
    * Is a release available to the public?
    * A pre-release is usually considered "not ready" for public use
    */
   export function isPublicRelease(): boolean {
     return Private.isRelease() && !Private.isPreRelease();
-  }
-
-  /**
-   * Checks if the event that triggered this action was a push
-   * See: https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
-   */
-  export function isPush(): boolean {
-    return context.eventName === 'push';
   }
 
   /**
@@ -65,6 +73,13 @@ namespace Functions.Private {
    */
   export function isTagPush(): boolean {
     return Private.isNewRefPush() && context.payload.ref.startsWith('refs/tags/');
+  }
+
+  /**
+   * Check if this event was a new tag push
+   */
+  export function isRefPush(): boolean {
+    return Private.isBranchPush() || Private.isTagPush();
   }
 
   /**
@@ -112,26 +127,22 @@ namespace Functions.Private {
    * List all the refs in the repository based on user's preferred ref
    *
    * @param github The github client
-   * @param preferredRef The user's preferred ref (heads | tags)
    */
-  export async function* listAllRefs(
-    github: GitHub,
-    preferredRef: string
-  ): AsyncGenerator<readonly [SemVer, string]> {
+  export async function* listAllRefs(github: GitHub): AsyncGenerator<readonly [SemVer, string]> {
     for (let nextPage = ''; true; ) {
       const { repository }: { repository: GraphQlQueryRepository } = await github.graphql(
         queryAllRefs,
         {
           repoName: context.repo.repo,
           repoOwner: context.repo.owner,
-          majorRef: `refs/${preferredRef}/`,
+          majorRef: `refs/${Private.getPreferredRef()}/`,
           pagination: nextPage,
         }
       );
 
       for (const { ref } of repository.refs.refsList) {
         const semverRef = semverParse(ref.name);
-        if (semverRef !== null) {
+        if (semverRef !== null && semverRef.prerelease?.length === 0) {
           if (core.isDebug()) {
             core.debug(`checking ${ref.name}`);
           }
@@ -154,12 +165,12 @@ namespace Functions.Private {
    *
    * @returns the ref for this release (if any)
    */
-  export function getPushRefVersion(preferredRef: string): SemVer {
+  export function getPushRefVersion() {
     const refName: string = (context.payload.ref as string)?.replace(
-      new RegExp(`^refs/${preferredRef}/`),
+      new RegExp(`^refs/${Private.getPreferredRef()}/`),
       ''
     );
-    return semverParse(refName) as SemVer;
+    return semverParse(refName);
   }
 
   /**
@@ -168,9 +179,16 @@ namespace Functions.Private {
    *
    * @returns the tag for this release (if any)
    */
-  export function getReleaseTag(): SemVer {
+  export function getReleaseTag() {
     const tagName: string = context.payload.release?.tag_name;
-    return semverParse(tagName) as SemVer;
+    return semverParse(tagName);
+  }
+
+  /**
+   * Returns the appropriate ref depending on the input preferences
+   */
+  export function getPreferredRef() {
+    return preferences.preferBranchRelease ? 'heads' : 'tags';
   }
 }
 

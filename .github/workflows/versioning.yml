@@ -3,7 +3,7 @@ name: 'Tag latest release of action tagger :zap:'
 on:
   release:
     types:
-      - published
+      - released
       - edited
   push: #(1)
     tags-ignore:
