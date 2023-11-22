@@ -12,7 +12,7 @@
    "scripts": {
       "watch": "ncc build src/index.ts --watch",
       "build": "ncc build src/index.ts --license LICENSE --minify --out lib",
-      "lint": "tsc && tsc -p ./tests",
+      "lint": "prettier --check . && tsc && tsc -p ./tests",
       "format": "prettier --write .",
       "test": "jest"
    },
