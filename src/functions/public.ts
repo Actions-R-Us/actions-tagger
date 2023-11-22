@@ -1,11 +1,9 @@
-import SemVer from 'semver/classes/semver';
 import semverGt from 'semver/functions/gt';
 import major from 'semver/functions/major';
 import valid from 'semver/functions/valid';
 
 import { context } from '@actions/github';
 import Private from '@actionstagger/functions/private';
-import { preferences } from '@actionstagger/util';
 
 import type { GitHub, LatestRef, TaggedRef } from './types';
 
@@ -15,7 +13,11 @@ namespace Functions {
    * Check if this release is publically available and has been published
    */
   export function isPublishedRelease(): boolean {
-    return Private.isPublicRelease() && context.payload.action === 'published';
+    return (
+      Private.isPublicRelease() &&
+      // TODO v3: Only check for context.payload.action === 'released'
+      (context.payload.action === 'published' || context.payload.action === 'released')
+    );
   }
 
   /**
@@ -26,10 +28,10 @@ namespace Functions {
   }
 
   /**
-   * Check if this event was a new tag push
+   * Check if this event was a new tag push without a prerelease
    */
-  export function isRefPush(): boolean {
-    return Private.isBranchPush() || Private.isTagPush();
+  export function isPublicRefPush(): boolean {
+    return Private.isRefPush() && !Private.isPreReleaseRef();
   }
 
   /**
@@ -37,16 +39,14 @@ namespace Functions {
    *
    * @returns The tag being published
    */
-  export function getPublishRefVersion(): SemVer {
-    return Functions.isRefPush()
-      ? Private.getPushRefVersion(Functions.getPreferredRef())
-      : Private.getReleaseTag();
+  export function getPublishRefVersion() {
+    return Private.isRefPush() ? Private.getPushRefVersion() : Private.getReleaseTag();
   }
 
   /**
    * Checks if the tag version of the pushed tag/release has valid version
    */
-  export function isSemVersionedTag(): boolean {
+  export function isSemVersionedRef(): boolean {
     return valid(Functions.getPublishRefVersion()) !== null;
   }
 
@@ -54,14 +54,7 @@ namespace Functions {
    * Get the major number of the release tag
    */
   export function majorVersion(): number {
-    return major(Functions.getPublishRefVersion());
-  }
-
-  /**
-   * Returns the appropriate ref depending on the input preferences
-   */
-  export function getPreferredRef(): 'heads' | 'tags' {
-    return preferences.preferBranchRelease ? 'heads' : 'tags';
+    return major(Functions.getPublishRefVersion()!);
   }
 
   /**
@@ -79,14 +72,11 @@ namespace Functions {
    * @param {GitHub} github The octokit client instance
    */
   export async function findLatestRef(github: GitHub): Promise<LatestRef> {
-    let [majorLatest, majorSha] = [Functions.getPublishRefVersion(), process.env.GITHUB_SHA!];
+    let [majorLatest, majorSha] = [Functions.getPublishRefVersion()!, process.env.GITHUB_SHA!];
     let [repoLatest, repoSha] = [majorLatest, majorSha];
 
     const major = majorLatest.major;
-    for await (const [semverRef, shaId] of Private.listAllRefs(
-      github,
-      Functions.getPreferredRef()
-    )) {
+    for await (const [semverRef, shaId] of Private.listAllRefs(github)) {
       if (semverRef.major === major && semverGt(semverRef, majorLatest)) {
         [majorLatest, majorSha] = [semverRef, shaId];
       }
@@ -113,7 +103,7 @@ namespace Functions {
   ): Promise<TaggedRef> {
     const major = Functions.majorVersion();
 
-    const ref = `${Functions.getPreferredRef()}/v${major}`;
+    const ref = `${Private.getPreferredRef()}/v${major}`;
     await Private.createRef(github, ref);
 
     if (publishLatest) {

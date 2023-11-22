@@ -16,7 +16,7 @@ describe('Functions', () => {
       jest.replaceProperty(process, 'env', {
         INPUT_PREFER_BRANCH_RELEASES: preferbranchReleases,
       });
-      await import('@actionstagger/functions/public').then(({ default: { getPreferredRef } }) =>
+      await import('@actionstagger/functions/private').then(({ default: { getPreferredRef } }) =>
         expect(getPreferredRef()).toBe(expected)
       );
     });
@@ -64,9 +64,8 @@ describe('Functions', () => {
     });
 
     test(`on ${eventName} when INPUT_PREFER_BRANCH_RELEASES=${preferbranchReleases}, pushed ref=${githubRef}, returns=${expected}`, async () => {
-      await import('@actionstagger/functions/public').then(
-        ({ default: { getPublishRefVersion } }) =>
-          expect(getPublishRefVersion().version).toBe(expected)
+      await import('@actionstagger/functions').then(({ getPublishRefVersion }) =>
+        expect(getPublishRefVersion()!.version).toBe(expected)
       );
     });
   });
@@ -109,11 +108,36 @@ describe('Functions', () => {
     });
 
     test(`on ${eventName}, release tag=${tagName}, returns=${expected}`, async () => {
-      await import('@actionstagger/functions/public').then(
-        ({ default: { getPublishRefVersion } }) =>
-          expect(getPublishRefVersion().version).toBe(expected)
+      await import('@actionstagger/functions').then(({ getPublishRefVersion }) =>
+        expect(getPublishRefVersion()!.version).toBe(expected)
       );
     });
+  });
+
+  describe.each([
+    { eventName: 'release', action: 'published', expected: true },
+    { eventName: 'release', action: 'edited', expected: false },
+  ])('#isPublishedRelease()', ({ eventName, action, expected }) => {
+    const dir = fs.mkdtempSync(os.tmpdir() + '/jest-release');
+
+    beforeEach(() => {
+      const releaseEvent = {
+        action,
+        release: {
+          tag_name: 'v3.0.0',
+        },
+      };
+      fs.writeFileSync(`${dir}/event.json`, JSON.stringify(releaseEvent));
+      jest.replaceProperty(process, 'env', {
+        GITHUB_EVENT_PATH: `${dir}/event.json`,
+        GITHUB_EVENT_NAME: eventName,
+      });
+    });
+
+    test('Should have been set to true', async () =>
+      await import('@actionstagger/functions').then(({ isPublishedRelease }) =>
+        expect(isPublishedRelease()).toBe(expected)
+      ));
   });
 
   describe.each([
@@ -154,7 +178,7 @@ describe('Functions', () => {
       const { default: semverParse } = await import('semver/functions/parse');
       const semverTag = semverParse(pushedRef)!;
 
-      await import('@actionstagger/functions/public').then(functions => {
+      await import('@actionstagger/functions').then(functions => {
         jest.spyOn(functions.default, 'getPublishRefVersion').mockReturnValue(semverTag);
       });
 
@@ -174,9 +198,7 @@ describe('Functions', () => {
     } exists and latest ref is ${repoLatest ?? 'unknown'}, returns [${expected.join(
       ', '
     )}]`, async () => {
-      const {
-        default: { findLatestRef },
-      } = await import('@actionstagger/functions/public');
+      const { findLatestRef } = await import('@actionstagger/functions');
       await findLatestRef(getOctokit('TEST_TOKEN')).then(({ repoLatest, majorLatest }) => {
         expect([repoLatest.name, majorLatest.name]).toEqual(expected);
       });
@@ -203,11 +225,11 @@ describe('Functions', () => {
           jest.spyOn(functions.default, 'createRef').mockResolvedValue()
         );
 
-        await import('@actionstagger/functions/public').then(functions =>
+        await import('@actionstagger/functions').then(functions =>
           jest.spyOn(functions.default, 'getPublishRefVersion').mockReturnValue(semverTag)
         );
 
-        await import('@actionstagger/functions/public').then(functions =>
+        await import('@actionstagger/functions/private').then(functions =>
           jest.spyOn(functions.default, 'getPreferredRef').mockReturnValue('tags')
         );
       });
@@ -215,12 +237,11 @@ describe('Functions', () => {
       test(`when creating ref for ${refToCreate} and publishLatest=${publishLatest}, will create ${expectedRef} and${
         publishLatest ? '' : ' not'
       } publish latest tag`, async () => {
-        await import('@actionstagger/functions/public').then(
-          ({ default: { createRequiredRefs } }) =>
-            createRequiredRefs(getOctokit('TEST_TOKEN'), publishLatest).then(({ ref, latest }) => {
-              expect(ref).toBe(expectedRef);
-              expect(latest).toBe(publishLatest);
-            })
+        await import('@actionstagger/functions').then(({ createRequiredRefs }) =>
+          createRequiredRefs(getOctokit('TEST_TOKEN'), publishLatest).then(({ ref, latest }) => {
+            expect(ref).toBe(expectedRef);
+            expect(latest).toBe(publishLatest);
+          })
         );
       });
     }

@@ -7,15 +7,15 @@ import {
   findLatestRef,
   getPublishRefVersion,
   isEditedRelease,
+  isPublicRefPush,
   isPublishedRelease,
-  isRefPush,
-  isSemVersionedTag,
+  isSemVersionedRef,
 } from '@actionstagger/functions';
 import type { GitHub } from '@actionstagger/functions/types';
 import { preferences } from '@actionstagger/util';
 
 export default async function main(): Promise<void> {
-  if (!(isRefPush() || isPublishedRelease() || isEditedRelease())) {
+  if (!(isPublicRefPush() || isPublishedRelease() || isEditedRelease())) {
     core.info(
       'This action should only be used in a release context or when creating a new tag or branch'
     );
@@ -23,7 +23,7 @@ export default async function main(): Promise<void> {
     return;
   }
 
-  if (!isSemVersionedTag()) {
+  if (!isSemVersionedRef()) {
     core.info('This action can only operate on semantically versioned tags');
     core.info('See: https://semver.org/');
     ifErrorSubmitBug();
@@ -32,7 +32,7 @@ export default async function main(): Promise<void> {
 
   const octokit = createOctoKit();
   const { repoLatest, majorLatest } = await findLatestRef(octokit);
-  const releaseVer = getPublishRefVersion();
+  const releaseVer = getPublishRefVersion()!;
 
   if (semverGte(releaseVer, majorLatest.name)) {
     const publishLatest = preferences.publishLatest && semverGte(releaseVer, repoLatest.name);
