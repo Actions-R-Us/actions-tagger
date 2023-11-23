@@ -83,7 +83,7 @@ on:
     tags-ignore:
       - 'latest'
       - 'v[0-9]+'
-      - '!v[0-9]+.*'
+      - '!v[0-9]+.[0-9]+.[0-9]+'
     branches-ignore:
       - '**'
     paths-ignore:

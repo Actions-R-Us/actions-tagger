@@ -1,4 +1,4 @@
-name: 'Tag latest release of action tagger :zap:'
+name: 'Tag latest release of action tagger ⚡'
 
 on:
   release:
@@ -9,7 +9,7 @@ on:
     tags-ignore:
       - 'latest'
       - 'v[0-9]+'
-      - '!v[0-9]+.*'
+      - '!v[0-9]+.[0-9]+.[0-9]+'
     branches-ignore:
       - '**'
     paths-ignore:
