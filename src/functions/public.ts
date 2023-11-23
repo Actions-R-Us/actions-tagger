@@ -1,6 +1,6 @@
 import semverGt from 'semver/functions/gt';
-import major from 'semver/functions/major';
-import valid from 'semver/functions/valid';
+import semverMajor from 'semver/functions/major';
+import semverValid from 'semver/functions/valid';
 
 import { context } from '@actions/github';
 import Private from '@actionstagger/functions/private';
@@ -47,14 +47,14 @@ namespace Functions {
    * Checks if the tag version of the pushed tag/release has valid version
    */
   export function isSemVersionedRef(): boolean {
-    return valid(Functions.getPublishRefVersion()) !== null;
+    return semverValid(Functions.getPublishRefVersion()) !== null;
   }
 
   /**
    * Get the major number of the release tag
    */
   export function majorVersion(): number {
-    return major(Functions.getPublishRefVersion()!);
+    return semverMajor(Functions.getPublishRefVersion()!);
   }
 
   /**
@@ -76,7 +76,7 @@ namespace Functions {
     let [repoLatest, repoSha] = [majorLatest, majorSha];
 
     const major = majorLatest.major;
-    for await (const [semverRef, shaId] of Private.listAllRefs(github)) {
+    for await (const [semverRef, shaId] of Private.listAllPublicRefs(github)) {
       if (semverRef.major === major && semverGt(semverRef, majorLatest)) {
         [majorLatest, majorSha] = [semverRef, shaId];
       }

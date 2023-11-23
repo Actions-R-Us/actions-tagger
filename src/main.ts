@@ -2,6 +2,7 @@ import semverGte from 'semver/functions/gte';
 
 import * as core from '@actions/core';
 import { getOctokit } from '@actions/github';
+import ActionError, { ActionErrorMap } from '@actionstagger/errors';
 import {
   createRequiredRefs,
   findLatestRef,
@@ -16,17 +17,12 @@ import { preferences } from '@actionstagger/util';
 
 export default async function main(): Promise<void> {
   if (!(isPublicRefPush() || isPublishedRelease() || isEditedRelease())) {
-    core.info(
-      'This action should only be used in a release context or when creating a new tag or branch'
-    );
-    ifErrorSubmitBug();
+    presentError(ActionError.ACTION_CONTEXT_ERROR);
     return;
   }
 
   if (!isSemVersionedRef()) {
-    core.info('This action can only operate on semantically versioned tags');
-    core.info('See: https://semver.org/');
-    ifErrorSubmitBug();
+    presentError(ActionError.ACTION_SEMVER_ERROR);
     return;
   }
 
@@ -41,8 +37,7 @@ export default async function main(): Promise<void> {
     outputTagName(ref);
     outputLatest(latest);
   } else if (majorLatest.shaId !== process.env.GITHUB_SHA) {
-    core.info('Nothing to do because release commit is earlier than major tag commit');
-    ifErrorSubmitBug();
+    presentError(ActionError.ACTION_OLDREF_ERROR);
   }
 }
 
@@ -79,7 +74,13 @@ function createOctoKit(): GitHub {
   return getOctokit(token);
 }
 
-function ifErrorSubmitBug(): void {
+function presentError(actionError: ActionError): void {
+  if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID != null) {
+    const error = new Error(actionError);
+    error.name = ActionErrorMap[actionError];
+    throw error;
+  }
+  core.info(actionError);
   core.info('If you believe this to be an error, please submit a bug report');
   core.info(
     `https://github.com/${

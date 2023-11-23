@@ -9,6 +9,9 @@ import type { GitHub, GraphQlQueryRepository } from './types';
 
 /* eslint-disable @typescript-eslint/no-namespace */
 namespace Functions.Private {
+  function isSemVerPrelease(semv: SemVer | null): boolean {
+    return (semv?.prerelease.length ?? 0) + (semv?.build.length ?? 0) > 0;
+  }
   /**
    * Checks if the event that triggered this action was a release
    * See: https://docs.github.com/en/webhooks/webhook-events-and-payloads#release
@@ -43,7 +46,7 @@ namespace Functions.Private {
    * @returns true if the tag is a prerelease
    */
   export function isPreReleaseRef(): boolean {
-    return (Private.getPushRefVersion()?.prerelease.length ?? 0) > 0;
+    return isSemVerPrelease(Private.getPushRefVersion());
   }
 
   /**
@@ -65,14 +68,14 @@ namespace Functions.Private {
    * @returns true if the event is a branch push
    */
   export function isBranchPush(): boolean {
-    return Private.isNewRefPush() && context.payload.ref.startsWith('refs/heads/');
+    return Private.isNewRefPush() && context.payload.ref?.startsWith('refs/heads/');
   }
 
   /**
    * @returns true if the event is a tag push
    */
   export function isTagPush(): boolean {
-    return Private.isNewRefPush() && context.payload.ref.startsWith('refs/tags/');
+    return Private.isNewRefPush() && context.payload.ref?.startsWith('refs/tags/');
   }
 
   /**
@@ -128,7 +131,9 @@ namespace Functions.Private {
    *
    * @param github The github client
    */
-  export async function* listAllRefs(github: GitHub): AsyncGenerator<readonly [SemVer, string]> {
+  export async function* listAllPublicRefs(
+    github: GitHub
+  ): AsyncGenerator<readonly [SemVer, string]> {
     for (let nextPage = ''; true; ) {
       const { repository }: { repository: GraphQlQueryRepository } = await github.graphql(
         queryAllRefs,
@@ -142,7 +147,7 @@ namespace Functions.Private {
 
       for (const { ref } of repository.refs.refsList) {
         const semverRef = semverParse(ref.name);
-        if (semverRef !== null && semverRef.prerelease?.length === 0) {
+        if (semverRef !== null && !isSemVerPrelease(semverRef)) {
           if (core.isDebug()) {
             core.debug(`checking ${ref.name}`);
           }

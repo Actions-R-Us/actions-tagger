@@ -5,3 +5,6 @@ beforeAll(() => {
   process.env.GITHUB_REPOSITORY ??= 'test/test';
   process.env.GITHUB_ACTION_REPOSITORY ??= 'Actions-R-Us/actions-tagger';
 });
+
+beforeEach(() => jest.resetModules());
+afterEach(() => jest.restoreAllMocks());

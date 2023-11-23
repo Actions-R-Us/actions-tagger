@@ -5,16 +5,19 @@
       "type": "git",
       "url": "git+https://github.com/Actions-R-Us/actions-tagger.git"
    },
-   "engines": {
-      "node": ">=20"
-   },
    "main": "./lib/index.js",
+   "bin": {
+      "actionstagger": "./lib/index.js"
+   },
    "scripts": {
       "watch": "ncc build src/index.ts --watch",
-      "build": "ncc build src/index.ts --license LICENSE --minify --out lib",
+      "build": "ncc build src/index.ts --license LICENSE --minify --no-cache --out lib",
       "lint": "prettier --check . && tsc && tsc -p ./tests",
       "format": "prettier --write .",
       "test": "jest"
+   },
+   "engines": {
+      "node": ">=20"
    },
    "author": {
       "name": "Actions-R-Us",

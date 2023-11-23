@@ -5,9 +5,6 @@ import { getOctokit } from '@actions/github';
 import type { GraphQlQueryRepository } from '@actionstagger/functions/types';
 
 describe('Functions', () => {
-  beforeEach(() => jest.resetModules());
-  afterEach(() => jest.restoreAllMocks());
-
   describe.each([
     { preferbranchReleases: 'false', expected: 'tags' },
     { preferbranchReleases: 'true', expected: 'heads' },
@@ -68,6 +65,75 @@ describe('Functions', () => {
         expect(getPublishRefVersion()!.version).toBe(expected)
       );
     });
+  });
+
+  describe.each([
+    {
+      tagName: '10.20.30',
+      expected: true,
+    },
+    {
+      tagName: '1.1.2-prerelease+meta',
+      expected: false,
+    },
+    {
+      tagName: '1.0.0-alpha.1',
+      expected: false,
+    },
+    {
+      tagName: 'v1.1.7',
+      expected: true,
+    },
+    {
+      tagName: '2023.01.01',
+      expected: true,
+    },
+    {
+      tagName: '2.0.0-rc.1+build.123',
+      expected: false,
+    },
+    {
+      // although not valid semver, it does not contain prerelease or build fields
+      tagName: '1.2',
+      expected: true,
+    },
+    {
+      // although not valid semver, it does not contain prerelease or build fields
+      tagName: 'v1',
+      expected: true,
+    },
+  ])('#isPublicRefPush()', ({ tagName, expected }) => {
+    const dir = fs.mkdtempSync(os.tmpdir() + '/jest-push');
+
+    beforeEach(() => {
+      const pushEvent = {
+        ref: `refs/tags/${tagName}`,
+        created: true,
+      };
+      fs.writeFileSync(`${dir}/event.json`, JSON.stringify(pushEvent));
+      jest.replaceProperty(process, 'env', {
+        GITHUB_EVENT_PATH: `${dir}/event.json`,
+        INPUT_PREFER_BRANCH_RELEASES: 'false',
+        GITHUB_EVENT_NAME: 'push',
+        GITHUB_REF_NAME: tagName,
+        GITHUB_REF: `refs/tags/${tagName}`,
+      });
+    });
+
+    afterEach(() => {
+      fs.readdirSync(dir, { recursive: true }).forEach(file => {
+        fs.rmSync(`${dir}/${file}`);
+      });
+    });
+
+    afterAll(() => {
+      fs.rmSync(dir, { recursive: true });
+    });
+
+    test(`when pushed ref=${tagName}, returns ${expected}`, async () =>
+      await import('@actionstagger/functions').then(({ isPublicRefPush }) =>
+        expect(isPublicRefPush()).toBe(expected)
+      ));
   });
 
   describe.each([
@@ -176,14 +242,14 @@ describe('Functions', () => {
       // to create semver objects such as SemVer is not instanceof SemVer...🙄
       // In short see https://backend.cafe/should-you-use-jest-as-a-testing-library
       const { default: semverParse } = await import('semver/functions/parse');
-      const semverTag = semverParse(pushedRef)!;
+      const semverTag = semverParse(pushedRef);
 
       await import('@actionstagger/functions').then(functions => {
         jest.spyOn(functions.default, 'getPublishRefVersion').mockReturnValue(semverTag);
       });
 
       await import('@actionstagger/functions/private').then(functions => {
-        jest.spyOn(functions.default, 'listAllRefs').mockImplementation(async function* () {
+        jest.spyOn(functions.default, 'listAllPublicRefs').mockImplementation(async function* () {
           for (const ref of refsList.map(
             ({ ref }) => [semverParse(ref.name)!, ref.object.shaId] as const
           )) {
@@ -206,6 +272,29 @@ describe('Functions', () => {
   });
 
   describe.each([
+    { ref: 'v1.0.0.alpha', valid: false },
+    { ref: 'v1.2', valid: false },
+    { ref: '1.2.3-0123', valid: false },
+    { ref: '10.20.30', valid: true },
+    { ref: '10.20.30-rc1', valid: true },
+    { ref: '2022.01.01', valid: false },
+    { ref: 'v3.2.2', valid: true },
+    { ref: '3.2.2-alpha', valid: true },
+  ])('#isSemVersionedRef()', ({ ref, valid }) => {
+    beforeEach(async () => {
+      const { default: semverParse } = await import('semver/functions/parse');
+      await import('@actionstagger/functions/public').then(({ default: functions }) => {
+        jest.spyOn(functions, 'getPublishRefVersion').mockReturnValue(semverParse(ref));
+      });
+    });
+
+    test(`ref ${ref} is ${valid ? 'valid' : 'invalid'} semver`, async () => {
+      const { isSemVersionedRef } = await import('@actionstagger/functions');
+      expect(isSemVersionedRef()).toBe(valid);
+    });
+  });
+
+  describe.each([
     {
       refToCreate: 'v3.3.7',
       publishLatest: false,
@@ -220,7 +309,7 @@ describe('Functions', () => {
     '#createRequiredRefs(github, publishLatest)',
     ({ refToCreate, publishLatest, expectedRef }) => {
       beforeEach(async () => {
-        const semverTag = (await import('semver/functions/parse')).default(refToCreate)!;
+        const semverTag = (await import('semver/functions/parse')).default(refToCreate);
         await import('@actionstagger/functions/private').then(functions =>
           jest.spyOn(functions.default, 'createRef').mockResolvedValue()
         );

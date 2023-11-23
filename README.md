@@ -79,10 +79,9 @@ on:
     types:
       - released
       - edited
-  push: #(1)
+  push: # (1)
     tags:
-      - 'v[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v?[0-9]+.[0-9]+.[0-9]+'
     branches-ignore:
       - '**'
     paths-ignore:
