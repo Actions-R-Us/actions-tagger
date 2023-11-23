@@ -18,12 +18,12 @@ version="${version##+(v)}" # discard leading v
         exit 1
     fi
     echo "Releasing version $version" >&2
-    git stash
+    git stash -q
     yarn build
     git add lib
     git commit -m "release files for version $version"
     git tag "v$version"
     git rm -rf lib
     git reset --soft HEAD~1
-    git stash pop
+    git stash pop -q || true
 )
