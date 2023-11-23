@@ -81,7 +81,7 @@ function presentError(actionError: ActionError): void {
     throw error;
   }
   core.info(actionError);
-  core.info('If you believe this to be an error, please submit a bug report');
+  core.info('If you believe this to be a false positive, please submit a bug report');
   core.info(
     `https://github.com/${
       process.env.GITHUB_ACTION_REPOSITORY ?? 'Actions-R-Us/actions-tagger'

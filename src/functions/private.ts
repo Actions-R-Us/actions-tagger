@@ -102,7 +102,7 @@ namespace Functions.Private {
       return refObj.ref.endsWith(refName);
     });
 
-    let upstreamRef: unknown;
+    let upstreamRef: Awaited<ReturnType<typeof github.rest.git.createRef>>['data'];
 
     if (matchingRef !== undefined) {
       core.info(`Updating ref: ${refName} to: ${process.env.GITHUB_SHA}`);
@@ -122,7 +122,8 @@ namespace Functions.Private {
     }
 
     if (core.isDebug()) {
-      core.debug(`${JSON.stringify(upstreamRef)} now points to: "${process.env.GITHUB_SHA}"`);
+      core.debug(`response: ${JSON.stringify(upstreamRef)}`);
+      core.debug(`${upstreamRef?.ref} now points to: "${process.env.GITHUB_SHA}"`);
     }
   }
 
