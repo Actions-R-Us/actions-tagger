@@ -6,10 +6,9 @@ on:
       - released
       - edited
   push: #(1)
-    tags-ignore:
-      - 'latest'
-      - 'v[0-9]+'
-      - '!v[0-9]+.[0-9]+.[0-9]+'
+    tags:
+      - 'v[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
     branches-ignore:
       - '**'
     paths-ignore:

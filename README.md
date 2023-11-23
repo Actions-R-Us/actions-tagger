@@ -80,10 +80,9 @@ on:
       - released
       - edited
   push: #(1)
-    tags-ignore:
-      - 'latest'
-      - 'v[0-9]+'
-      - '!v[0-9]+.[0-9]+.[0-9]+'
+    tags:
+      - 'v[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
     branches-ignore:
       - '**'
     paths-ignore:
@@ -111,8 +110,8 @@ jobs:
    [not be created](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#push)
    when more than three tags are pushed at once.**
 
-   If you want to track branches, swap the filters listed under
-   `branches-ignore` and `tags-ignore`. At all times, leave the filter for
+   If you want to track branches, replace `tags` with `branches` and
+   `branches-ignore` with `tags-ignore`. At all times, leave the filter for
    `paths-ignore` as is.
 
 2. The
