@@ -70,7 +70,6 @@ function createOctoKit(): GitHub {
     );
     token = process.env.GITHUB_TOKEN;
   }
-  // else...
   return getOctokit(token);
 }
 

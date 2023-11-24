@@ -25,7 +25,7 @@ namespace Functions.Private {
    * See: https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
    */
   export function isPush(): boolean {
-    return context.eventName === 'push';
+    return (context.eventName === 'push' && context.payload.created) || context.payload.deleted;
   }
 
   /**
@@ -58,24 +58,17 @@ namespace Functions.Private {
   }
 
   /**
-   * Check if the push event created a new ref
-   */
-  export function isNewRefPush(): boolean {
-    return Private.isPush() && context.payload.created === true;
-  }
-
-  /**
    * @returns true if the event is a branch push
    */
   export function isBranchPush(): boolean {
-    return Private.isNewRefPush() && context.payload.ref?.startsWith('refs/heads/');
+    return Private.isPush() && context.payload.ref?.startsWith('refs/heads/');
   }
 
   /**
    * @returns true if the event is a tag push
    */
   export function isTagPush(): boolean {
-    return Private.isNewRefPush() && context.payload.ref?.startsWith('refs/tags/');
+    return Private.isPush() && context.payload.ref?.startsWith('refs/tags/');
   }
 
   /**

@@ -75,7 +75,7 @@ bugs.
 name: Keep the versions up-to-date
 
 on:
-  release:
+  release: # (1)
     types:
       - released
       - edited
@@ -103,15 +103,17 @@ jobs:
 ### Notes
 
 1. Add the push configuration if you want this action to also run when a new tag
-   or branch is created.
+   or branch is created. Due to the nature of releases, a new tag will also be
+   created with a new release, which will trigger a new workflow run. Therefore,
+   pick one or the other to avoid conflicts.
 
    **An event will
    [not be created](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#push)
    when more than three tags are pushed at once.**
 
-   If you want to track branches, replace `tags` with `branches` and
-   `branches-ignore` with `tags-ignore`. At all times, leave the filter for
-   `paths-ignore` as is.
+   If using the push event, and you want to track branches, replace `tags` with
+   `branches` and `branches-ignore` with `tags-ignore`. At all times, leave the
+   filter for `paths-ignore` as is.
 
 2. The
    [`permissions`](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions)

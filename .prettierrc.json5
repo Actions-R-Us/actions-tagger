@@ -1,0 +1,20 @@
+{
+  useTabs: false,
+  semi: true,
+  singleQuote: true,
+  quoteProps: 'as-needed',
+  trailingComma: 'es5',
+  bracketSpacing: true,
+  bracketSameLine: true,
+  arrowParens: 'avoid',
+  htmlWhitespaceSensitivity: 'css',
+  proseWrap: 'always', // https://prettier.io/docs/en/options.html#prose-wrap
+  overrides: [
+    {
+      files: '.importsortrc',
+      options: {
+        parser: 'json',
+      },
+    },
+  ],
+}
