@@ -13,6 +13,7 @@ import {
   isPublicRefPush,
   isPublishedRelease,
   isSemVersionedRef,
+  unlinkLatestRefMatch,
 } from '@actionstagger/functions';
 import type { GitHub, Ref } from '@actionstagger/functions/types';
 
@@ -31,13 +32,32 @@ export default async function main(): Promise<void> {
   const { isLatest, majorLatest } = await findLatestMajorRef(octokit);
   const releaseVer = getPublishRefVersion()!;
 
-  if (semverGte(releaseVer, majorLatest.name)) {
-    const publishLatest = preferences.publishLatest && semverGte(releaseVer, repoLatest.name);
+  if (majorLatest === undefined) {
+    // major tag doesn't exist. It was possibly deleted...
+    // this can also occur if the deleted tag was the only tag with that major version
+    await unlinkLatestRefMatch(octokit);
+    return;
+  }
 
-    const { ref, latest } = await createRequiredRefs(octokit, publishLatest);
-    outputTagName(ref);
-    outputLatest(latest);
-  } else if (majorLatest.shaId !== process.env.GITHUB_SHA) {
+  let ref: Ref;
+  let publishedLatest: boolean = false;
+
+  if (semverGt(releaseVer, majorLatest.name)) {
+    // this implies that releaseVer was deleted. publish just new major tag
+    ({ ref, publishedLatest } = await createRequiredRefs(octokit, majorLatest, isLatest));
+    // and delete the latest tag if it was pointing to the deleted release
+    await unlinkLatestRefMatch(octokit);
+  } else if (semverEq(releaseVer, majorLatest.name)) {
+    // publish the latest tag
+    ({ ref, publishedLatest } = await createRequiredRefs(
+      octokit,
+      {
+        name: releaseVer.version,
+        shaId: process.env.GITHUB_SHA!,
+      },
+      isLatest
+    ));
+  } else {
     presentError(ActionError.ACTION_OLDREF_ERROR);
     return;
   }
