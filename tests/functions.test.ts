@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 
@@ -211,17 +212,17 @@ describe('Functions', () => {
       pushedRef: 'v3.2.2',
       existing: 'v3.3.0',
       repoLatest: 'v4.0.0',
-      expected: ['4.0.0', '3.3.0'],
+      expected: [false, '3.3.0'],
     },
     {
       pushedRef: 'v3.2.0',
-      expected: ['3.2.0', '3.2.0'],
+      expected: [true, '3.2.0'],
     },
     {
       pushedRef: 'v3.3.0',
       existing: 'v3.2.2',
       repoLatest: 'v4.0.0',
-      expected: ['4.0.0', '3.3.0'],
+      expected: [false, '3.3.0'],
     },
   ])('#findLatestRef(github)', ({ pushedRef, existing, repoLatest, expected }) => {
     beforeEach(async () => {
@@ -239,7 +240,7 @@ describe('Functions', () => {
       // when trying to use `instanceof`.
       // In this case, if the parse function was imported earlier, it will exist in a different
       // global scope than the rest of the test. Which leads to infruiating errors when used
-      // to create semver objects such as SemVer is not instanceof SemVer...🙄
+      // to create semver objects. Errors such as 'SemVer is not instanceof SemVer' arise...🙄
       // In short see https://backend.cafe/should-you-use-jest-as-a-testing-library
       const { default: semverParse } = await import('semver/functions/parse');
       const semverTag = semverParse(pushedRef);
@@ -264,9 +265,9 @@ describe('Functions', () => {
     } exists and latest ref is ${repoLatest ?? 'unknown'}, returns [${expected.join(
       ', '
     )}]`, async () => {
-      const { findLatestRef } = await import('@actionstagger/functions');
-      await findLatestRef(getOctokit('TEST_TOKEN')).then(({ repoLatest, majorLatest }) => {
-        expect([repoLatest.name, majorLatest.name]).toEqual(expected);
+      const { findLatestMajorRef } = await import('@actionstagger/functions');
+      await findLatestMajorRef(getOctokit('TEST_TOKEN')).then(({ isLatest, majorLatest }) => {
+        expect([isLatest, majorLatest!.name] as const).toEqual(expected);
       });
     });
   });
@@ -297,18 +298,22 @@ describe('Functions', () => {
   describe.each([
     {
       refToCreate: 'v3.3.7',
-      publishLatest: false,
+      isLatest: false,
       expectedRef: 'tags/v3',
     },
     {
       refToCreate: 'v3.3.1',
-      publishLatest: true,
+      isLatest: true,
       expectedRef: 'tags/v3',
     },
   ])(
-    '#createRequiredRefs(github, publishLatest)',
-    ({ refToCreate, publishLatest, expectedRef }) => {
+    '#createRequiredRefs(github, refToCreate, isLatest)',
+    ({ refToCreate, isLatest, expectedRef }) => {
       beforeEach(async () => {
+        jest.replaceProperty(process, 'env', {
+          GITHUB_SHA: createHash('sha1').update(refToCreate).digest('hex'),
+          INPUT_PUBLISH_LATEST: isLatest ? 'true' : 'false',
+        });
         const semverTag = (await import('semver/functions/parse')).default(refToCreate);
         await import('@actionstagger/functions/private').then(functions =>
           jest.spyOn(functions.default, 'createRef').mockResolvedValue()
@@ -323,16 +328,22 @@ describe('Functions', () => {
         );
       });
 
-      test(`when creating ref for ${refToCreate} and publishLatest=${publishLatest}, will create ${expectedRef} and${
-        publishLatest ? '' : ' not'
+      test(`when creating ref for ${refToCreate} and isLatest=${isLatest}, will create ${expectedRef} and${
+        isLatest ? '' : ' not'
       } publish latest tag`, async () => {
         await import('@actionstagger/functions').then(({ createRequiredRefs }) =>
-          createRequiredRefs(getOctokit('TEST_TOKEN'), publishLatest).then(({ ref, latest }) => {
-            expect(ref).toBe(expectedRef);
-            expect(latest).toBe(publishLatest);
+          createRequiredRefs(
+            getOctokit('TEST_TOKEN'),
+            { name: refToCreate, shaId: process.env.GITHUB_SHA! },
+            isLatest
+          ).then(({ ref, publishedLatest }) => {
+            expect(ref.name).toBe(expectedRef);
+            expect(publishedLatest).toBe(isLatest);
           })
         );
       });
     }
   );
 });
+
+// TODO test unlinkLatestRefMatch
