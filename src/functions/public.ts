@@ -4,8 +4,9 @@ import semverValid from 'semver/functions/valid';
 
 import { context } from '@actions/github';
 import Private from '@actionstagger/functions/private';
+import { preferences } from '@actionstagger/util';
 
-import type { GitHub, LatestRef, TaggedRef } from './types';
+import type { GitHub, MajorRef, Ref, TaggedRef } from './types';
 
 /* eslint-disable @typescript-eslint/no-namespace */
 namespace Functions {
@@ -28,10 +29,17 @@ namespace Functions {
   }
 
   /**
-   * Check if this event was a new tag push without a prerelease
+   * Check if this event was a new ref push without a prerelease
    */
   export function isPublicRefPush(): boolean {
     return Private.isRefPush() && !Private.isPreReleaseRef();
+  }
+
+  /**
+   * Check if this event was a ref delete without a prerelease
+   */
+  export function isPublicRefDelete(): boolean {
+    return Private.isRefDelete() && !Private.isPreReleaseRef();
   }
 
   /**
@@ -40,7 +48,9 @@ namespace Functions {
    * @returns The tag being published
    */
   export function getPublishRefVersion() {
-    return Private.isRefPush() ? Private.getPushRefVersion() : Private.getReleaseTag();
+    return Private.isRefPush() || Private.isRefDelete()
+      ? Private.getPushRefVersion()
+      : Private.getReleaseTag();
   }
 
   /**
@@ -66,55 +76,85 @@ namespace Functions {
    * but the latest ref is v4.0.3, a possible return value may be
    * {repoLatest: "v4.0.3", majorLatest: "v3.3.0"} (this is not a typo, keep reading).
    * In this case, this event should not trigger an update because it is
-   * targetting a lower version than the latest v3 (v3.3.0) and we already have a latest version
-   * which is v4.0.3
+   * targetting a lower version than the latest v3 (v3.3.0) and we already have a latest version which is v4.0.3
    *
    * @param {GitHub} github The octokit client instance
    */
-  export async function findLatestRef(github: GitHub): Promise<LatestRef> {
-    let [majorLatest, majorSha] = [Functions.getPublishRefVersion()!, process.env.GITHUB_SHA!];
-    let [repoLatest, repoSha] = [majorLatest, majorSha];
+  export async function findLatestMajorRef(github: GitHub): Promise<MajorRef> {
+    let [majorLatest, majorSha] = [Functions.getPublishRefVersion(), process.env.GITHUB_SHA!];
+    let repoLatest = majorLatest;
 
-    const major = majorLatest.major;
+    const major = majorLatest?.major;
+    if (Private.isRefDelete()) {
+      [majorLatest, majorSha] = [repoLatest] = [null, ''];
+    }
     for await (const [semverRef, shaId] of Private.listAllPublicRefs(github)) {
-      if (semverRef.major === major && semverGt(semverRef, majorLatest)) {
+      if (semverRef.major === major && (majorLatest === null || semverGt(semverRef, majorLatest))) {
         [majorLatest, majorSha] = [semverRef, shaId];
       }
 
-      if (semverGt(semverRef, repoLatest)) {
-        [repoLatest, repoSha] = [semverRef, shaId];
+      if (repoLatest === null || semverGt(semverRef, repoLatest)) {
+        repoLatest = semverRef;
       }
     }
+
     return {
-      repoLatest: { name: repoLatest.version, shaId: repoSha },
-      majorLatest: { name: majorLatest.version, shaId: majorSha },
+      isLatest: repoLatest?.compare(majorLatest!) === 0,
+      majorLatest: majorLatest ? { name: majorLatest.version, shaId: majorSha } : undefined,
     };
   }
 
   /**
-   * Creates the tags required and optionally a 'latest' tag
+   * Creates the refs required and optionally a 'latest' ref
    *
    * @param {GitHub} github The octokit client for making requests
-   * @param {Boolean} publishLatest Flag used to signal the publishing of the latest tag
+   * @param {Ref} majorRef The name of the major ref
+   * @param {boolean} isLatest This ref is the latest
    */
   export async function createRequiredRefs(
     github: GitHub,
-    publishLatest: boolean
+    majorRef: Ref,
+    isLatest: boolean = false
   ): Promise<TaggedRef> {
-    const major = Functions.majorVersion();
+    const major = semverMajor(majorRef.name);
 
-    const ref = `${Private.getPreferredRef()}/v${major}`;
+    const ref: Ref = {
+      name: `${Private.getPreferredRef()}/v${major}`,
+      shaId: majorRef.shaId,
+    };
+
     await Private.createRef(github, ref);
 
-    if (publishLatest) {
+    if (preferences.publishLatest && isLatest) {
       // TODO v3: `${getPreferredRef()}/latest`
-      await Private.createRef(github, 'tags/latest');
+      await Private.createRef(github, {
+        name: 'tags/latest',
+        shaId: majorRef.shaId,
+      });
     }
 
     return {
       ref,
-      latest: publishLatest,
+      publishedLatest: preferences.publishLatest && isLatest,
     };
+  }
+
+  /**
+   * Deletes the latest ref if it points to the deleted release
+   * @param github The github octokit client
+   * @param ref The ref that was deleted
+   */
+  export async function unlinkLatestRefMatch(github: GitHub): Promise<void> {
+    const ref: Ref = {
+      name: `${Private.getPreferredRef()}/v${Functions.majorVersion()}`,
+      shaId: process.env.GITHUB_SHA!,
+    };
+    for await (const matchRef of Private.listLatestRefMatches(github, ref)) {
+      await github.rest.git.deleteRef({
+        ...context.repo,
+        ref: matchRef,
+      });
+    }
   }
 }
 

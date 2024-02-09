@@ -19,13 +19,13 @@ export interface GraphQlQueryRepository {
 }
 
 export interface TaggedRef {
-  ref: Ref['name'];
-  latest: boolean;
+  ref: Ref;
+  publishedLatest: boolean;
 }
 
-export interface LatestRef {
-  repoLatest: Ref;
-  majorLatest: Ref;
+export interface MajorRef {
+  majorLatest?: Ref; // may not exist if ref was deleted and was the only one
+  isLatest: boolean;
 }
 
 export interface Ref {

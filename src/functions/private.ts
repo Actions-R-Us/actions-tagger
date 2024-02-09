@@ -5,7 +5,7 @@ import * as core from '@actions/core';
 import { context } from '@actions/github';
 import { preferences, queryAllRefs } from '@actionstagger/util';
 
-import type { GitHub, GraphQlQueryRepository } from './types';
+import type { GitHub, GraphQlQueryRepository, Ref } from './types';
 
 /* eslint-disable @typescript-eslint/no-namespace */
 namespace Functions.Private {
@@ -25,7 +25,21 @@ namespace Functions.Private {
    * See: https://docs.github.com/en/webhooks/webhook-events-and-payloads#push
    */
   export function isPush(): boolean {
-    return (context.eventName === 'push' && context.payload.created) || context.payload.deleted;
+    return context.eventName === 'push';
+  }
+
+  /**
+   * @returns true if the event that triggered this action deleted a ref
+   */
+  export function isDeletedPushRef(): boolean {
+    return Private.isPush() && context.payload.deleted;
+  }
+
+  /**
+   * @returns true if the event that triggered this action created a ref
+   */
+  export function isCreatedPushRef(): boolean {
+    return Private.isPush() && context.payload.created;
   }
 
   /**
@@ -60,15 +74,43 @@ namespace Functions.Private {
   /**
    * @returns true if the event is a branch push
    */
+  export function isRefHeads(): boolean {
+    return context.payload.ref?.startsWith('refs/heads/');
+  }
+
+  /**
+   * @returns true if the event is a tag push
+   */
+  export function isRefTags(): boolean {
+    return context.payload.ref?.startsWith('refs/tags/');
+  }
+
+  /**
+   * @returns true if the event is a branch push
+   */
   export function isBranchPush(): boolean {
-    return Private.isPush() && context.payload.ref?.startsWith('refs/heads/');
+    return Private.isCreatedPushRef() && Private.isRefHeads();
   }
 
   /**
    * @returns true if the event is a tag push
    */
   export function isTagPush(): boolean {
-    return Private.isPush() && context.payload.ref?.startsWith('refs/tags/');
+    return Private.isCreatedPushRef() && Private.isRefTags();
+  }
+
+  /**
+   * @returns true if the event is a branch delete
+   */
+  export function isBranchDelete(): boolean {
+    return Private.isDeletedPushRef() && Private.isRefHeads();
+  }
+
+  /**
+   * @returns true if the event is a tag push
+   */
+  export function isTagDelete(): boolean {
+    return Private.isDeletedPushRef() && Private.isRefTags();
   }
 
   /**
@@ -79,13 +121,21 @@ namespace Functions.Private {
   }
 
   /**
+   * @returns true if the event is a tag or branch delete
+   */
+  export function isRefDelete(): boolean {
+    return Private.isBranchDelete() || Private.isTagDelete();
+  }
+
+  /**
    * Creates the given ref for this release
    * refName must begin with tags/ or heads/
    *
    * @param github The github client
-   * @param refName The name of the ref to use. ex tags/latest, heads/v1, etc
+   * @param ref The ref to use. ex tags/latest, heads/v1, etc
    */
-  export async function createRef(github: GitHub, refName: string): Promise<void> {
+  export async function createRef(github: GitHub, ref: Ref): Promise<void> {
+    const { name: refName, shaId: refSha } = ref;
     const { data: matchingRefs } = await github.rest.git.listMatchingRefs({
       ...context.repo,
       ref: refName,
@@ -98,25 +148,49 @@ namespace Functions.Private {
     let upstreamRef: Awaited<ReturnType<typeof github.rest.git.createRef>>['data'];
 
     if (matchingRef !== undefined) {
-      core.info(`Updating ref: ${refName} to: ${process.env.GITHUB_SHA}`);
+      core.info(`Updating ref: ${refName} to: ${refSha}`);
       ({ data: upstreamRef } = await github.rest.git.updateRef({
         ...context.repo,
         force: true,
         ref: refName,
-        sha: process.env.GITHUB_SHA!,
+        sha: refSha,
       }));
     } else {
-      core.info(`Creating ref: refs/${refName} for: ${process.env.GITHUB_SHA}`);
+      core.info(`Creating ref: refs/${refName} for: ${refSha}`);
       ({ data: upstreamRef } = await github.rest.git.createRef({
         ...context.repo,
         ref: `refs/${refName}`,
-        sha: process.env.GITHUB_SHA!,
+        sha: refSha,
       }));
     }
 
     if (core.isDebug()) {
       core.debug(`response: ${JSON.stringify(upstreamRef)}`);
-      core.debug(`${upstreamRef?.ref} now points to: "${process.env.GITHUB_SHA}"`);
+      core.debug(`${upstreamRef?.ref} now points to: "${refSha}"`);
+    }
+  }
+
+  /**
+   * finds the latest ref if it points to the deleted release
+   * there should technically only be one
+   * @param github The github octokit client
+   * @param ref The ref which was deleted
+   */
+  export async function* listLatestRefMatches(github: GitHub, ref: Ref) {
+    const { data: matchingRefs } = await github.rest.git.listMatchingRefs({
+      ...context.repo,
+      // TODO v3: `${getPreferredRef()}/latest`
+      ref: `tags/latest`,
+    });
+
+    for (const matchRef of matchingRefs) {
+      if (matchRef.object.sha === ref.shaId) {
+        if (core.isDebug()) {
+          core.debug(`Found latest ref: ${matchRef.ref}`);
+        } else {
+          yield matchRef.ref;
+        }
+      }
     }
   }
 
@@ -125,9 +199,7 @@ namespace Functions.Private {
    *
    * @param github The github client
    */
-  export async function* listAllPublicRefs(
-    github: GitHub
-  ): AsyncGenerator<readonly [SemVer, string]> {
+  export async function* listAllPublicRefs(github: GitHub) {
     for (let nextPage = ''; true; ) {
       const { repository }: { repository: GraphQlQueryRepository } = await github.graphql(
         queryAllRefs,
