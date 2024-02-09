@@ -1,22 +1,23 @@
-import semverGte from 'semver/functions/gte';
+import semverEq from 'semver/functions/eq';
+import semverGt from 'semver/functions/gt';
 
 import * as core from '@actions/core';
 import { getOctokit } from '@actions/github';
 import ActionError, { ActionErrorMap } from '@actionstagger/errors';
 import {
   createRequiredRefs,
-  findLatestRef,
+  findLatestMajorRef,
   getPublishRefVersion,
   isEditedRelease,
+  isPublicRefDelete,
   isPublicRefPush,
   isPublishedRelease,
   isSemVersionedRef,
 } from '@actionstagger/functions';
-import type { GitHub } from '@actionstagger/functions/types';
-import { preferences } from '@actionstagger/util';
+import type { GitHub, Ref } from '@actionstagger/functions/types';
 
 export default async function main(): Promise<void> {
-  if (!(isPublicRefPush() || isPublishedRelease() || isEditedRelease())) {
+  if (!(isPublicRefPush() || isPublicRefDelete() || isPublishedRelease() || isEditedRelease())) {
     presentError(ActionError.ACTION_CONTEXT_ERROR);
     return;
   }
@@ -27,7 +28,7 @@ export default async function main(): Promise<void> {
   }
 
   const octokit = createOctoKit();
-  const { repoLatest, majorLatest } = await findLatestRef(octokit);
+  const { isLatest, majorLatest } = await findLatestMajorRef(octokit);
   const releaseVer = getPublishRefVersion()!;
 
   if (semverGte(releaseVer, majorLatest.name)) {
@@ -38,17 +39,21 @@ export default async function main(): Promise<void> {
     outputLatest(latest);
   } else if (majorLatest.shaId !== process.env.GITHUB_SHA) {
     presentError(ActionError.ACTION_OLDREF_ERROR);
+    return;
   }
+
+  outputTagName(ref);
+  outputLatest(publishedLatest);
 }
 
 /**
  * Sets the output of this action to indicate the version that was published/updated
- * @param refName The tag version
+ * @param ref The newly created version
  */
-function outputTagName(refName: string): void {
-  core.setOutput('tag', refName);
+function outputTagName(ref: Ref): void {
+  core.setOutput('tag', ref.name);
   // TODO: Deprecate: v3
-  core.setOutput('ref_name', refName);
+  core.setOutput('ref_name', ref.name);
 }
 
 /**
@@ -74,6 +79,7 @@ function createOctoKit(): GitHub {
 }
 
 function presentError(actionError: ActionError): void {
+  // only throw errors during tests
   if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID != null) {
     const error = new Error(actionError);
     error.name = ActionErrorMap[actionError];
